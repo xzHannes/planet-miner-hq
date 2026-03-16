@@ -74,6 +74,20 @@
   </div>
 
   <script src="data.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCs2wm0VNWRwYLVF06nsp_CbyKL1YV_sWw",
+      authDomain: "roblox-404d7.firebaseapp.com",
+      projectId: "roblox-404d7",
+      storageBucket: "roblox-404d7.firebasestorage.app",
+      messagingSenderId: "522618361608",
+      appId: "1:522618361608:web:5b6cb2c47f538f054bbebd"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
   <script src="app.js"></script>
 </body>
 </html>

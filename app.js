@@ -45,24 +45,41 @@
   window.addEventListener("resize", initStars);
 
   // ============================================================
-  // PERSISTENCE (localStorage for ticket changes)
+  // PERSISTENCE (Firebase Firestore – shared between all users)
   // ============================================================
-  const STORAGE_KEY = "pm_ticket_overrides";
+  let firestoreOverrides = {};
+  let firestoreReady = false;
 
-  function loadOverrides() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    } catch { return {}; }
+  // Load overrides from Firestore on startup + listen for live changes
+  function initFirestore() {
+    return new Promise((resolve) => {
+      db.collection("ticket_overrides").onSnapshot((snapshot) => {
+        firestoreOverrides = {};
+        snapshot.forEach((doc) => {
+          firestoreOverrides[doc.id] = doc.data();
+        });
+        firestoreReady = true;
+        // Re-render tickets tab if currently viewing it
+        if (currentTab === "tickets" && currentUser) {
+          renderTickets();
+        }
+        resolve();
+      }, (err) => {
+        console.error("[Firebase] Snapshot error:", err);
+        // Fallback to localStorage
+        try {
+          firestoreOverrides = JSON.parse(localStorage.getItem("pm_ticket_overrides") || "{}");
+        } catch { firestoreOverrides = {}; }
+        firestoreReady = true;
+        resolve();
+      });
+    });
   }
-
-  function saveOverrides(overrides) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
-  }
+  initFirestore();
 
   function getTickets() {
-    const overrides = loadOverrides();
     return TICKETS.map((t) => {
-      const o = overrides[t.id];
+      const o = firestoreOverrides[t.id];
       const merged = o ? { ...t, ...o } : { ...t };
       if (!merged.favs) merged.favs = [];
       return merged;
@@ -70,9 +87,20 @@
   }
 
   function updateTicket(id, changes) {
-    const overrides = loadOverrides();
-    overrides[id] = { ...(overrides[id] || {}), ...changes };
-    saveOverrides(overrides);
+    // Merge with existing overrides
+    const existing = firestoreOverrides[id] || {};
+    const merged = { ...existing, ...changes };
+    firestoreOverrides[id] = merged;
+
+    // Save to Firestore
+    db.collection("ticket_overrides").doc(id).set(merged, { merge: true })
+      .catch((err) => {
+        console.error("[Firebase] Write error:", err);
+        // Fallback: save to localStorage
+        const local = JSON.parse(localStorage.getItem("pm_ticket_overrides") || "{}");
+        local[id] = merged;
+        localStorage.setItem("pm_ticket_overrides", JSON.stringify(local));
+      });
   }
 
   function toggleFav(ticketId) {

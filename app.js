@@ -101,7 +101,49 @@
         local[id] = merged;
         localStorage.setItem("pm_ticket_overrides", JSON.stringify(local));
       });
+
+    // Log activity
+    logActivity(currentUser, id, changes);
   }
+
+  // ============================================================
+  // ACTIVITY TRACKING (GitHub-style contribution calendar)
+  // ============================================================
+  function logActivity(user, ticketId, changes) {
+    if (!user) return;
+    const today = new Date().toISOString().split("T")[0];
+    const entry = {
+      user,
+      ticketId,
+      action: Object.keys(changes).join(","),
+      timestamp: new Date().toISOString(),
+    };
+    // Increment today's count in Firestore
+    const docId = `${today}_${user}`;
+    db.collection("activity_log").doc(docId).set({
+      date: today,
+      user,
+      count: firebase.firestore.FieldValue.increment(1),
+    }, { merge: true }).catch((err) => console.error("[Activity] Write error:", err));
+  }
+
+  let activityData = {};
+
+  function loadActivityData() {
+    return new Promise((resolve) => {
+      db.collection("activity_log").onSnapshot((snapshot) => {
+        activityData = {};
+        snapshot.forEach((doc) => {
+          const d = doc.data();
+          if (!activityData[d.date]) activityData[d.date] = {};
+          activityData[d.date][d.user] = d.count;
+        });
+        if (currentTab === "activity" && currentUser) renderActivity();
+        resolve();
+      }, () => resolve());
+    });
+  }
+  loadActivityData();
 
   function toggleFav(ticketId) {
     const tickets = getTickets();
@@ -201,7 +243,7 @@
 
   function renderTab(id) {
     content.innerHTML = "";
-    const r = { vision: renderVision, tickets: renderTickets, systeme: renderSysteme, wirtschaft: renderWirtschaft, roadmap: renderRoadmap, reise: renderReise };
+    const r = { vision: renderVision, tickets: renderTickets, activity: renderActivity, systeme: renderSysteme, wirtschaft: renderWirtschaft, roadmap: renderRoadmap, reise: renderReise };
     if (r[id]) r[id]();
   }
 
@@ -336,7 +378,14 @@
       const body = h("div", "kanban-body");
 
       const pOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-      colTickets.sort((a, b) => (pOrder[a.priority] || 3) - (pOrder[b.priority] || 3));
+      colTickets.sort((a, b) => {
+        // Favorited tickets first (both users fav > one user fav > no fav)
+        const aFavCount = (a.favs || []).length;
+        const bFavCount = (b.favs || []).length;
+        if (aFavCount !== bFavCount) return bFavCount - aFavCount;
+        // Then by priority
+        return (pOrder[a.priority] || 3) - (pOrder[b.priority] || 3);
+      });
 
       const VISIBLE_COUNT = 3;
       const expanded = expandedCols[col.key] || false;
@@ -559,6 +608,173 @@
     });
 
     modal.classList.remove("hidden");
+  }
+
+  // ============================================================
+  // ACTIVITY TAB (GitHub-style contribution calendar)
+  // ============================================================
+  function renderActivity() {
+    content.innerHTML = "";
+    const head = h("div", "section-head");
+    head.innerHTML = `<h2>Activity Tracker</h2><p>Wann wurde wie viel am Projekt gearbeitet</p>`;
+    content.appendChild(head);
+
+    // Render calendar for each user
+    const userKeys = Object.keys(USERS);
+    userKeys.forEach((userKey) => {
+      const card = h("div", "card");
+      const userLabel = h("div", "activity-user-header");
+      userLabel.innerHTML = `<div class="ticket-assignee ${USERS[userKey].color}">${USERS[userKey].initial}</div><span class="activity-user-name">${USERS[userKey].display}</span>`;
+      card.appendChild(userLabel);
+      card.appendChild(buildCalendar(userKey));
+      content.appendChild(card);
+    });
+
+    // Combined view
+    const combinedCard = h("div", "card card-glow-blue");
+    const combinedLabel = h("div", "activity-user-header");
+    combinedLabel.innerHTML = `<span class="activity-user-name">Gesamt</span>`;
+    combinedCard.appendChild(combinedLabel);
+    combinedCard.appendChild(buildCalendar(null));
+    content.appendChild(combinedCard);
+
+    // Stats card
+    const statsCard = h("div", "card");
+    statsCard.innerHTML = `<h3>Statistiken</h3>`;
+    const statsGrid = h("div", "grid-4");
+    const tickets = getTickets();
+    const done = tickets.filter((t) => t.status === "done").length;
+    const progress = tickets.filter((t) => t.status === "progress").length;
+    const backlog = tickets.filter((t) => t.status === "backlog").length;
+    const total = tickets.length;
+
+    const stats = [
+      { label: "Erledigt", value: done, color: "var(--roblox-green)" },
+      { label: "In Arbeit", value: progress, color: "var(--roblox-yellow)" },
+      { label: "Backlog", value: backlog, color: "var(--text-dim)" },
+      { label: "Fortschritt", value: Math.round((done / total) * 100) + "%", color: "var(--roblox-blue)" },
+    ];
+
+    stats.forEach((s) => {
+      const block = h("div", "feature-block");
+      block.innerHTML = `<div class="stat-value" style="color:${s.color}">${s.value}</div><div class="fb-label">${s.label}</div>`;
+      statsGrid.appendChild(block);
+    });
+    statsCard.appendChild(statsGrid);
+    content.appendChild(statsCard);
+  }
+
+  function buildCalendar(userKey) {
+    const wrapper = h("div", "activity-calendar-wrapper");
+
+    // Day labels
+    const dayLabels = h("div", "activity-day-labels");
+    ["", "Mo", "", "Mi", "", "Fr", ""].forEach((d) => {
+      const lbl = h("div", "activity-day-label", d);
+      dayLabels.appendChild(lbl);
+    });
+    wrapper.appendChild(dayLabels);
+
+    const calendarEl = h("div", "activity-calendar");
+
+    // Build 26 weeks (half year) of day cells
+    const today = new Date();
+    const weeks = 26;
+    const totalDays = weeks * 7;
+
+    // Find the start date (go back totalDays from end of current week)
+    const endOfWeek = new Date(today);
+    endOfWeek.setDate(endOfWeek.getDate() + (6 - endOfWeek.getDay())); // end on Saturday
+    const startDate = new Date(endOfWeek);
+    startDate.setDate(startDate.getDate() - totalDays + 1);
+
+    // Month labels
+    const monthBar = h("div", "activity-months");
+    let lastMonth = -1;
+    for (let w = 0; w < weeks; w++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + w * 7);
+      const m = d.getMonth();
+      if (m !== lastMonth) {
+        const mLabel = h("div", "activity-month-label");
+        mLabel.textContent = d.toLocaleString("de-DE", { month: "short" });
+        mLabel.style.gridColumnStart = w + 1;
+        monthBar.appendChild(mLabel);
+        lastMonth = m;
+      }
+    }
+    monthBar.style.gridTemplateColumns = `repeat(${weeks}, 1fr)`;
+    wrapper.appendChild(monthBar);
+
+    // Day cells grid
+    const grid = h("div", "activity-grid");
+    grid.style.gridTemplateColumns = `repeat(${weeks}, 1fr)`;
+    grid.style.gridTemplateRows = "repeat(7, 1fr)";
+
+    for (let w = 0; w < weeks; w++) {
+      for (let d = 0; d < 7; d++) {
+        const cellDate = new Date(startDate);
+        cellDate.setDate(cellDate.getDate() + w * 7 + d);
+        const dateStr = cellDate.toISOString().split("T")[0];
+        const cell = h("div", "activity-cell");
+
+        // Get count
+        let count = 0;
+        if (activityData[dateStr]) {
+          if (userKey) {
+            count = activityData[dateStr][userKey] || 0;
+          } else {
+            // Combined
+            count = Object.values(activityData[dateStr]).reduce((a, b) => a + b, 0);
+          }
+        }
+
+        // Also count tickets completed on this date
+        const tickets = getTickets();
+        tickets.forEach((t) => {
+          if (t.completed === dateStr) {
+            if (!userKey || t.assignee === userKey) count += 3; // completing a ticket = 3 activity points
+          }
+        });
+
+        // Color intensity
+        if (cellDate > today) {
+          cell.classList.add("activity-future");
+        } else if (count === 0) {
+          cell.classList.add("activity-0");
+        } else if (count <= 2) {
+          cell.classList.add("activity-1");
+        } else if (count <= 5) {
+          cell.classList.add("activity-2");
+        } else if (count <= 10) {
+          cell.classList.add("activity-3");
+        } else {
+          cell.classList.add("activity-4");
+        }
+
+        cell.title = `${dateStr}: ${count} Aktivitaeten`;
+        grid.appendChild(cell);
+      }
+    }
+
+    const calContainer = h("div", "activity-cal-container");
+    calContainer.appendChild(dayLabels);
+    calContainer.appendChild(grid);
+    wrapper.appendChild(monthBar);
+    wrapper.appendChild(calContainer);
+
+    // Legend
+    const legend = h("div", "activity-legend");
+    legend.innerHTML = `<span class="activity-legend-label">Weniger</span>
+      <div class="activity-cell activity-0"></div>
+      <div class="activity-cell activity-1"></div>
+      <div class="activity-cell activity-2"></div>
+      <div class="activity-cell activity-3"></div>
+      <div class="activity-cell activity-4"></div>
+      <span class="activity-legend-label">Mehr</span>`;
+    wrapper.appendChild(legend);
+
+    return wrapper;
   }
 
   // ============================================================

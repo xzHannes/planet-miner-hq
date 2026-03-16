@@ -1204,5 +1204,131 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--border-glow); }
 
 /* ============================================================
+   ACTIVITY TRACKER (GitHub-style contribution calendar)
+   ============================================================ */
+.activity-user-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.activity-user-name {
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.activity-calendar-wrapper {
+  width: 100%;
+}
+
+.activity-months {
+  display: grid;
+  gap: 0;
+  margin-bottom: 4px;
+  margin-left: 32px;
+}
+
+.activity-month-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.activity-cal-container {
+  display: flex;
+  gap: 4px;
+}
+
+.activity-day-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+  width: 28px;
+}
+
+.activity-day-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  height: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.activity-grid {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+  grid-auto-flow: column;
+}
+
+.activity-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  transition: all 0.15s;
+  cursor: default;
+}
+
+.activity-cell:hover {
+  transform: scale(1.3);
+  outline: 2px solid var(--text-muted);
+  outline-offset: 1px;
+}
+
+.activity-0      { background: var(--bg-elevated); }
+.activity-1      { background: rgba(0, 209, 70, 0.25); }
+.activity-2      { background: rgba(0, 209, 70, 0.45); }
+.activity-3      { background: rgba(0, 209, 70, 0.7); }
+.activity-4      { background: var(--roblox-green); box-shadow: 0 0 6px var(--roblox-green-glow); }
+.activity-future { background: transparent; border: 1px solid var(--border); opacity: 0.3; }
+
+.activity-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+
+.activity-legend .activity-cell {
+  width: 12px;
+  height: 12px;
+}
+
+.activity-legend .activity-cell:hover {
+  transform: none;
+  outline: none;
+}
+
+.activity-legend-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.stat-value {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 800px) {
+  .activity-cell {
+    width: 10px;
+    height: 10px;
+  }
+  .activity-grid { gap: 2px; }
+  .activity-day-labels { width: 22px; }
+  .activity-day-label { font-size: 0.55rem; height: 10px; }
+}
+
+/* ============================================================
    FOOTER (removed, clean look)
    ============================================================ */

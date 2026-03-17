@@ -186,6 +186,31 @@
     }, { merge: true }).catch((err) => console.error("[Activity] Write error:", err));
   }
 
+  // ============================================================
+  // ROADMAP PERSISTENCE (Firestore – checked items)
+  // ============================================================
+  let roadmapChecked = {};
+
+  function loadRoadmapData() {
+    return new Promise((resolve) => {
+      db.collection("roadmap").doc("checked").onSnapshot((doc) => {
+        roadmapChecked = doc.exists ? doc.data() : {};
+        if (currentTab === "roadmap" && currentUser) renderRoadmap();
+        resolve();
+      }, () => resolve());
+    });
+  }
+  loadRoadmapData();
+
+  function toggleRoadmapItem(itemId) {
+    roadmapChecked[itemId] = !roadmapChecked[itemId];
+    db.collection("roadmap").doc("checked").set(roadmapChecked)
+      .catch((err) => {
+        console.error("[Firebase] Roadmap save error:", err);
+        showToast("Roadmap speichern fehlgeschlagen", true);
+      });
+  }
+
   let activityData = {};
 
   function loadActivityData() {
@@ -1061,14 +1086,37 @@
 
     ROADMAP.forEach((phase) => {
       const card = h("div", "phase-card " + phase.status);
-      card.innerHTML = `
-        <div class="phase-header">
-          <span class="phase-icon">${phase.icon}</span>
-          <span class="phase-title">${phase.phase}</span>
-          <span class="phase-status ${phase.status}">${phase.status === "in-progress" ? "In Arbeit" : phase.status === "done" ? "Erledigt" : "Geplant"}</span>
-        </div>
-        <ul class="phase-items">${phase.items.map((i) => `<li>${i}</li>`).join("")}</ul>
+
+      const checkedCount = phase.items.filter((i) => roadmapChecked[i.id]).length;
+      const totalCount = phase.items.length;
+      const pct = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
+
+      const headerDiv = h("div", "phase-header");
+      headerDiv.innerHTML = `
+        <span class="phase-icon">${phase.icon}</span>
+        <span class="phase-title">${phase.phase}</span>
+        <span class="phase-progress-text">${checkedCount}/${totalCount}</span>
+        <span class="phase-status ${phase.status}">${phase.status === "in-progress" ? "In Arbeit" : phase.status === "done" ? "Erledigt" : "Geplant"}</span>
       `;
+      card.appendChild(headerDiv);
+
+      // Progress bar
+      const progressBar = h("div", "phase-progress-bar");
+      const progressFill = h("div", "phase-progress-fill");
+      progressFill.style.width = pct + "%";
+      progressBar.appendChild(progressFill);
+      card.appendChild(progressBar);
+
+      const ul = h("ul", "phase-items");
+      phase.items.forEach((item) => {
+        const li = h("li", roadmapChecked[item.id] ? "roadmap-checked" : "");
+        li.innerHTML = `<label class="roadmap-label"><input type="checkbox" class="roadmap-checkbox" ${roadmapChecked[item.id] ? "checked" : ""}><span class="roadmap-checkmark"></span><span class="roadmap-text">${item.text}</span></label>`;
+        li.querySelector("input").addEventListener("change", () => {
+          toggleRoadmapItem(item.id);
+        });
+        ul.appendChild(li);
+      });
+      card.appendChild(ul);
       content.appendChild(card);
     });
   }

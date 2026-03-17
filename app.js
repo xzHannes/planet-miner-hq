@@ -50,13 +50,28 @@
   let firestoreTickets = [];
   let firestoreReady = false;
 
+  // Status toast for user feedback
+  function showToast(msg, isError) {
+    const existing = document.getElementById("fb-toast");
+    if (existing) existing.remove();
+    const toast = document.createElement("div");
+    toast.id = "fb-toast";
+    toast.textContent = msg;
+    toast.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:10px;font-size:0.88rem;font-weight:600;z-index:9999;color:#fff;background:${isError ? "#e84c3d" : "#00d146"};box-shadow:0 4px 20px rgba(0,0,0,0.4);animation:fadeIn 0.2s`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
   function initFirestore() {
     return new Promise((resolve) => {
-      db.collection("tickets").orderBy("created", "desc").onSnapshot((snapshot) => {
+      // No orderBy to avoid index requirement
+      db.collection("tickets").onSnapshot((snapshot) => {
         firestoreTickets = [];
         snapshot.forEach((doc) => {
           firestoreTickets.push({ ...doc.data(), _docId: doc.id });
         });
+        // Sort client-side: backlog/progress first, then by created date
+        firestoreTickets.sort((a, b) => (b.created || "").localeCompare(a.created || ""));
         firestoreReady = true;
         if (currentTab === "tickets" && currentUser) {
           renderTickets();
@@ -64,6 +79,7 @@
         resolve();
       }, (err) => {
         console.error("[Firebase] Snapshot error:", err);
+        showToast("Firebase-Verbindung fehlgeschlagen! Pruefe Firestore Rules.", true);
         // Fallback: use SEED_TICKETS if Firestore fails
         firestoreTickets = (typeof SEED_TICKETS !== "undefined" ? SEED_TICKETS : []).map((t) => ({
           ...t,
@@ -85,11 +101,14 @@
   }
 
   function updateTicket(id, changes) {
-    const docRef = db.collection("tickets").doc(id);
     changes.updated_at = new Date().toISOString();
-    docRef.update(changes).catch((err) => {
-      console.error("[Firebase] Update error:", err);
-    });
+    // Use set with merge to avoid "document not found" errors
+    db.collection("tickets").doc(id).set(changes, { merge: true })
+      .then(() => console.log("[Firebase] Updated:", id))
+      .catch((err) => {
+        console.error("[Firebase] Update error:", err);
+        showToast("Speichern fehlgeschlagen: " + err.message, true);
+      });
     logActivity(currentUser, id, changes);
   }
 
@@ -100,16 +119,22 @@
     ticketData.created_by = currentUser;
     if (!ticketData.favs) ticketData.favs = [];
 
-    db.collection("tickets").doc(id).set(ticketData).catch((err) => {
-      console.error("[Firebase] Create error:", err);
-    });
+    db.collection("tickets").doc(id).set(ticketData)
+      .then(() => showToast("Ticket " + id + " erstellt"))
+      .catch((err) => {
+        console.error("[Firebase] Create error:", err);
+        showToast("Erstellen fehlgeschlagen: " + err.message, true);
+      });
     logActivity(currentUser, id, { action: "created" });
   }
 
   function deleteTicket(id) {
-    db.collection("tickets").doc(id).delete().catch((err) => {
-      console.error("[Firebase] Delete error:", err);
-    });
+    db.collection("tickets").doc(id).delete()
+      .then(() => showToast("Ticket " + id + " geloescht"))
+      .catch((err) => {
+        console.error("[Firebase] Delete error:", err);
+        showToast("Loeschen fehlgeschlagen: " + err.message, true);
+      });
     logActivity(currentUser, id, { action: "deleted" });
   }
 
@@ -720,63 +745,75 @@
   // ============================================================
   function openCreateModal() {
     const newId = getNextTicketId();
-    modalTitle.textContent = "Neues Ticket erstellen";
+    modalTitle.textContent = "Neues Ticket";
 
-    const userOptions = Object.keys(USERS).map((u) =>
-      `<option value="${u}">${USERS[u].display}</option>`
+    const priorityBtns = ["low", "medium", "high", "critical"].map((p) =>
+      `<button class="filter-btn${p === "medium" ? " active" : ""}" data-prio="${p}">${p.toUpperCase()}</button>`
     ).join("");
 
-    const tagCheckboxes = ALL_TAGS.map((tag) =>
-      `<label class="tag-checkbox"><input type="checkbox" value="${tag}"><span class="ticket-tag tag-${tag}">${tag}</span></label>`
+    const assigneeBtns = Object.keys(USERS).map((u) =>
+      `<button class="filter-btn" data-assign="${u}">${USERS[u].display}</button>`
+    ).join("") + `<button class="filter-btn active" data-assign="">Niemand</button>`;
+
+    const tagBtns = ALL_TAGS.map((tag) =>
+      `<button class="filter-btn" data-tag="${tag}"><span class="ticket-tag tag-${tag}" style="pointer-events:none">${tag}</span></button>`
     ).join("");
 
     modalBody.innerHTML = `
-      <div class="detail-row">
-        <span class="detail-label">ID</span>
-        <span class="detail-value">${newId}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Titel</span>
-        <span class="detail-value" style="flex:1">
-          <input type="text" class="modal-input" id="create-title" placeholder="Ticket-Titel...">
-        </span>
-      </div>
-      <div class="detail-row" style="align-items:flex-start">
-        <span class="detail-label">Beschreibung</span>
-        <span class="detail-value" style="flex:1">
-          <textarea class="modal-textarea" id="create-desc" rows="4" placeholder="Beschreibung..."></textarea>
-        </span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Priority</span>
-        <span class="detail-value">
-          <select class="modal-select" id="create-priority">
-            <option value="low">Low</option>
-            <option value="medium" selected>Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-          </select>
-        </span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Assignee</span>
-        <span class="detail-value">
-          <select class="modal-select" id="create-assignee">
-            <option value="">Niemand</option>
-            ${userOptions}
-          </select>
-        </span>
-      </div>
-      <div class="detail-row" style="align-items:flex-start">
-        <span class="detail-label">Tags</span>
-        <span class="detail-value">
-          <div class="create-tags">${tagCheckboxes}</div>
-        </span>
-      </div>
-      <div class="modal-footer-actions">
-        <button class="btn-save-ticket" id="create-submit">Ticket erstellen</button>
+      <div class="create-form">
+        <div class="create-id-badge">${newId}</div>
+        <input type="text" class="modal-input create-title-input" id="create-title" placeholder="Titel eingeben..." autofocus>
+        <textarea class="modal-textarea" id="create-desc" rows="3" placeholder="Beschreibung (optional)..."></textarea>
+        <div class="create-section">
+          <div class="create-section-label">Priority</div>
+          <div class="modal-actions" id="create-prio-bar">${priorityBtns}</div>
+        </div>
+        <div class="create-section">
+          <div class="create-section-label">Assignee</div>
+          <div class="modal-actions" id="create-assign-bar">${assigneeBtns}</div>
+        </div>
+        <div class="create-section">
+          <div class="create-section-label">Tags</div>
+          <div class="modal-actions modal-tags-wrap" id="create-tags-bar">${tagBtns}</div>
+        </div>
+        <div class="modal-footer-actions">
+          <button class="btn-save-ticket" id="create-submit">Erstellen</button>
+        </div>
       </div>
     `;
+
+    // Interactive button toggles
+    let selectedPrio = "medium";
+    let selectedAssignee = "";
+    const selectedTags = [];
+
+    modalBody.querySelectorAll("#create-prio-bar .filter-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectedPrio = btn.dataset.prio;
+        modalBody.querySelectorAll("#create-prio-bar .filter-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+
+    modalBody.querySelectorAll("#create-assign-bar .filter-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectedAssignee = btn.dataset.assign;
+        modalBody.querySelectorAll("#create-assign-bar .filter-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+
+    modalBody.querySelectorAll("#create-tags-bar .filter-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const tag = btn.dataset.tag;
+        const idx = selectedTags.indexOf(tag);
+        if (idx >= 0) { selectedTags.splice(idx, 1); btn.classList.remove("active"); }
+        else { selectedTags.push(tag); btn.classList.add("active"); }
+      });
+    });
 
     document.getElementById("create-submit").addEventListener("click", () => {
       const title = document.getElementById("create-title").value.trim();
@@ -785,19 +822,14 @@
         return;
       }
 
-      const tags = [];
-      modalBody.querySelectorAll('.create-tags input[type="checkbox"]:checked').forEach((cb) => {
-        tags.push(cb.value);
-      });
-
       createTicket({
         id: newId,
         title,
         desc: document.getElementById("create-desc").value.trim(),
         status: "backlog",
-        priority: document.getElementById("create-priority").value,
-        assignee: document.getElementById("create-assignee").value || null,
-        tags,
+        priority: selectedPrio,
+        assignee: selectedAssignee || null,
+        tags: selectedTags,
       });
 
       closeModal();

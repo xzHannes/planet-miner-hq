@@ -190,6 +190,12 @@
   }
 
   // ============================================================
+  // DOM REFS (must be before auth to avoid TDZ on session restore)
+  // ============================================================
+  const tabBar = document.getElementById("tab-bar");
+  const content = document.getElementById("content");
+
+  // ============================================================
   // AUTH
   // ============================================================
   const loginScreen = document.getElementById("login-screen");
@@ -253,9 +259,6 @@
   // ============================================================
   // TABS
   // ============================================================
-  const tabBar = document.getElementById("tab-bar");
-  const content = document.getElementById("content");
-
   function buildTabs() {
     tabBar.innerHTML = "";
     TABS.forEach((t) => {

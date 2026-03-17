@@ -1491,13 +1491,91 @@ body {
   letter-spacing: 0.5px;
 }
 
+/* Status buttons */
+.status-btn {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.status-btn:hover { border-color: var(--border-glow); color: var(--text); }
+.status-btn.status-backlog.active { background: var(--bg-elevated); border-color: var(--text-dim); color: var(--text); }
+.status-btn.status-progress.active { background: var(--roblox-yellow-glow); border-color: var(--roblox-yellow); color: var(--roblox-yellow); }
+.status-btn.status-done.active { background: var(--roblox-green-glow); border-color: var(--roblox-green); color: var(--roblox-green); }
+
+/* Priority buttons */
+.prio-btn {
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.prio-btn:hover { border-color: var(--border-glow); }
+.prio-btn.prio-critical.active { background: var(--roblox-red-glow); border-color: var(--roblox-red); color: var(--roblox-red); }
+.prio-btn.prio-high.active { background: var(--roblox-yellow-glow); border-color: var(--roblox-yellow); color: var(--roblox-yellow); }
+.prio-btn.prio-medium.active { background: var(--roblox-blue-glow); border-color: var(--roblox-blue); color: var(--roblox-blue); }
+.prio-btn.prio-low.active { background: var(--bg-elevated); border-color: var(--text-dim); color: var(--text-muted); }
+
+/* Assignee buttons */
+.assign-btn {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.assign-btn:hover { border-color: var(--border-glow); color: var(--text); }
+.assign-btn.assignee-hannes.active { background: var(--roblox-blue-glow); border-color: var(--roblox-blue); color: var(--roblox-blue); }
+.assign-btn.assignee-kumpel.active { background: var(--roblox-purple-glow); border-color: var(--roblox-purple); color: var(--roblox-purple); }
+.assign-btn.active { background: var(--bg-elevated); border-color: var(--text-dim); color: var(--text); }
+
+/* Tag toggle buttons */
+.tag-btn {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.tag-btn:hover { border-color: var(--border-glow); }
+.tag-btn.active.tag-mining { background: var(--roblox-yellow-glow); border-color: var(--roblox-yellow); color: var(--roblox-yellow); }
+.tag-btn.active.tag-pickaxe { background: rgba(255,140,66,0.2); border-color: var(--roblox-orange); color: var(--roblox-orange); }
+.tag-btn.active.tag-ui { background: var(--roblox-blue-glow); border-color: var(--roblox-blue); color: var(--roblox-blue); }
+.tag-btn.active.tag-audio { background: rgba(255,107,157,0.2); border-color: var(--roblox-pink); color: var(--roblox-pink); }
+.tag-btn.active.tag-world { background: var(--roblox-green-glow); border-color: var(--roblox-green); color: var(--roblox-green); }
+.tag-btn.active.tag-system { background: var(--roblox-purple-glow); border-color: var(--roblox-purple); color: var(--roblox-purple); }
+.tag-btn.active.tag-shop { background: rgba(255,140,66,0.2); border-color: var(--roblox-orange); color: var(--roblox-orange); }
+.tag-btn.active.tag-multiplayer { background: var(--roblox-blue-glow); border-color: var(--roblox-blue); color: var(--roblox-blue); }
+.tag-btn.active.tag-bug { background: var(--roblox-red-glow); border-color: var(--roblox-red); color: var(--roblox-red); }
+.tag-btn.active.tag-feature { background: var(--roblox-green-glow); border-color: var(--roblox-green); color: var(--roblox-green); }
+.tag-btn.active.tag-polish { background: var(--roblox-purple-glow); border-color: var(--roblox-purple); color: var(--roblox-purple); }
+
 .modal-tags-wrap {
   max-width: 100%;
-}
-
-.modal-tags-wrap .filter-btn {
-  font-size: 0.7rem;
-  padding: 3px 10px;
 }
 
 /* ============================================================

@@ -591,17 +591,17 @@
     const statuses = ["backlog", "progress", "done"];
     const statusBtns = statuses.map((s) => {
       const active = t.status === s;
-      const cls = active ? "filter-btn active" : "filter-btn";
+      const cls = active ? "status-btn status-" + s + " active" : "status-btn status-" + s;
       return `<button class="${cls}" data-action="status" data-value="${s}">${statusLabels[s]}</button>`;
     }).join("");
 
     const userKeys = Object.keys(USERS);
     const assigneeBtns = userKeys.map((u) => {
       const active = t.assignee === u;
-      const cls = active ? "filter-btn active" : "filter-btn";
+      const cls = active ? "assign-btn " + USERS[u].color + " active" : "assign-btn " + USERS[u].color;
       return `<button class="${cls}" data-action="assign" data-value="${u}">${USERS[u].display}</button>`;
     }).join("");
-    const unassignBtn = `<button class="filter-btn${!t.assignee ? " active" : ""}" data-action="assign" data-value="">Niemand</button>`;
+    const unassignBtn = `<button class="assign-btn${!t.assignee ? " active" : ""}" data-action="assign" data-value="">Niemand</button>`;
 
     const isFaved = t.favs.includes(currentUser);
     const favBtnLabel = isFaved ? "\u2605 Favorisiert" : "\u2606 Favorit";
@@ -612,13 +612,13 @@
     const priorities = ["critical", "high", "medium", "low"];
     const prioBtns = priorities.map((p) => {
       const active = t.priority === p;
-      const cls = active ? "filter-btn active" : "filter-btn";
+      const cls = active ? "prio-btn prio-" + p + " active" : "prio-btn prio-" + p;
       return `<button class="${cls}" data-action="priority" data-value="${p}">${p.toUpperCase()}</button>`;
     }).join("");
 
     const tagBtns = ALL_TAGS.map((tag) => {
       const active = (t.tags || []).includes(tag);
-      const cls = active ? "filter-btn active" : "filter-btn";
+      const cls = active ? "tag-btn tag-" + tag + " active" : "tag-btn tag-" + tag;
       return `<button class="${cls}" data-action="tag" data-value="${tag}">${tag}</button>`;
     }).join("");
 

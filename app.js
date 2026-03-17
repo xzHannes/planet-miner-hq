@@ -45,31 +45,30 @@
   window.addEventListener("resize", initStars);
 
   // ============================================================
-  // PERSISTENCE (Firebase Firestore – shared between all users)
+  // PERSISTENCE (Firebase Firestore – full tickets in DB)
   // ============================================================
-  let firestoreOverrides = {};
+  let firestoreTickets = [];
   let firestoreReady = false;
 
-  // Load overrides from Firestore on startup + listen for live changes
   function initFirestore() {
     return new Promise((resolve) => {
-      db.collection("ticket_overrides").onSnapshot((snapshot) => {
-        firestoreOverrides = {};
+      db.collection("tickets").orderBy("created", "desc").onSnapshot((snapshot) => {
+        firestoreTickets = [];
         snapshot.forEach((doc) => {
-          firestoreOverrides[doc.id] = doc.data();
+          firestoreTickets.push({ ...doc.data(), _docId: doc.id });
         });
         firestoreReady = true;
-        // Re-render tickets tab if currently viewing it
         if (currentTab === "tickets" && currentUser) {
           renderTickets();
         }
         resolve();
       }, (err) => {
         console.error("[Firebase] Snapshot error:", err);
-        // Fallback to localStorage
-        try {
-          firestoreOverrides = JSON.parse(localStorage.getItem("pm_ticket_overrides") || "{}");
-        } catch { firestoreOverrides = {}; }
+        // Fallback: use SEED_TICKETS if Firestore fails
+        firestoreTickets = (typeof SEED_TICKETS !== "undefined" ? SEED_TICKETS : []).map((t) => ({
+          ...t,
+          favs: t.favs || [],
+        }));
         firestoreReady = true;
         resolve();
       });
@@ -78,33 +77,75 @@
   initFirestore();
 
   function getTickets() {
-    return TICKETS.map((t) => {
-      const o = firestoreOverrides[t.id];
-      const merged = o ? { ...t, ...o } : { ...t };
-      if (!merged.favs) merged.favs = [];
-      return merged;
+    return firestoreTickets.map((t) => {
+      const ticket = { ...t };
+      if (!ticket.favs) ticket.favs = [];
+      return ticket;
     });
   }
 
   function updateTicket(id, changes) {
-    // Merge with existing overrides
-    const existing = firestoreOverrides[id] || {};
-    const merged = { ...existing, ...changes };
-    firestoreOverrides[id] = merged;
-
-    // Save to Firestore
-    db.collection("ticket_overrides").doc(id).set(merged, { merge: true })
-      .catch((err) => {
-        console.error("[Firebase] Write error:", err);
-        // Fallback: save to localStorage
-        const local = JSON.parse(localStorage.getItem("pm_ticket_overrides") || "{}");
-        local[id] = merged;
-        localStorage.setItem("pm_ticket_overrides", JSON.stringify(local));
-      });
-
-    // Log activity
+    const docRef = db.collection("tickets").doc(id);
+    changes.updated_at = new Date().toISOString();
+    docRef.update(changes).catch((err) => {
+      console.error("[Firebase] Update error:", err);
+    });
     logActivity(currentUser, id, changes);
   }
+
+  function createTicket(ticketData) {
+    const id = ticketData.id;
+    ticketData.created = new Date().toISOString().split("T")[0];
+    ticketData.updated_at = new Date().toISOString();
+    ticketData.created_by = currentUser;
+    if (!ticketData.favs) ticketData.favs = [];
+
+    db.collection("tickets").doc(id).set(ticketData).catch((err) => {
+      console.error("[Firebase] Create error:", err);
+    });
+    logActivity(currentUser, id, { action: "created" });
+  }
+
+  function deleteTicket(id) {
+    db.collection("tickets").doc(id).delete().catch((err) => {
+      console.error("[Firebase] Delete error:", err);
+    });
+    logActivity(currentUser, id, { action: "deleted" });
+  }
+
+  function getNextTicketId() {
+    const tickets = getTickets();
+    let maxNum = 0;
+    tickets.forEach((t) => {
+      const match = (t.id || "").match(/PM-(\d+)/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    });
+    return "PM-" + String(maxNum + 1).padStart(3, "0");
+  }
+
+  // One-time migration: push SEED_TICKETS to Firestore
+  async function migrateTicketsToFirestore() {
+    if (typeof SEED_TICKETS === "undefined") return;
+    const batch = db.batch();
+    SEED_TICKETS.forEach((t) => {
+      const ref = db.collection("tickets").doc(t.id);
+      batch.set(ref, {
+        ...t,
+        favs: t.favs || [],
+        updated_at: new Date().toISOString(),
+        created_by: "hannes",
+      }, { merge: true });
+    });
+    await batch.commit();
+    console.log("[Migration] " + SEED_TICKETS.length + " tickets migrated to Firestore.");
+    alert("Migration abgeschlossen! " + SEED_TICKETS.length + " Tickets in Firestore gespeichert.");
+  }
+
+  // Expose migration to console
+  window.migrateTickets = migrateTicketsToFirestore;
 
   // ============================================================
   // ACTIVITY TRACKING (GitHub-style contribution calendar)
@@ -112,13 +153,6 @@
   function logActivity(user, ticketId, changes) {
     if (!user) return;
     const today = new Date().toISOString().split("T")[0];
-    const entry = {
-      user,
-      ticketId,
-      action: Object.keys(changes).join(","),
-      timestamp: new Date().toISOString(),
-    };
-    // Increment today's count in Firestore
     const docId = `${today}_${user}`;
     db.collection("activity_log").doc(docId).set({
       date: today,
@@ -170,7 +204,6 @@
     return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
-  // Check session
   const saved = sessionStorage.getItem("pm_user");
   if (saved && USERS[saved]) {
     currentUser = saved;
@@ -307,17 +340,19 @@
   }
 
   // ============================================================
-  // TICKETS TAB (KANBAN) – with drag & drop + actions
+  // TICKETS TAB (KANBAN) – with drag & drop + actions + CRUD
   // ============================================================
   let ticketFilter = "all";
   let draggedTicketId = null;
   const expandedCols = { backlog: false, progress: false, done: false };
 
+  const ALL_TAGS = ["mining", "pickaxe", "ui", "audio", "world", "system", "shop", "multiplayer", "bug", "feature", "polish"];
+
   function renderTickets() {
     content.innerHTML = "";
     const tickets = getTickets();
 
-    // Filter bar
+    // Filter bar with create button
     const filterBar = h("div", "filter-bar");
     const filters = [
       { key: "all", label: "Alle" },
@@ -329,6 +364,28 @@
       btn.addEventListener("click", () => { ticketFilter = f.key; renderTickets(); });
       filterBar.appendChild(btn);
     });
+
+    // Spacer
+    const spacer = h("div", "");
+    spacer.style.flex = "1";
+    filterBar.appendChild(spacer);
+
+    // Create ticket button
+    const createBtn = h("button", "btn-create-ticket", "+ Neues Ticket");
+    createBtn.addEventListener("click", () => openCreateModal());
+    filterBar.appendChild(createBtn);
+
+    // Migration button (only visible, useful for first-time setup)
+    if (tickets.length === 0 && typeof SEED_TICKETS !== "undefined" && SEED_TICKETS.length > 0) {
+      const migrateBtn = h("button", "btn-migrate", "Tickets migrieren");
+      migrateBtn.addEventListener("click", () => {
+        if (confirm("Alle " + SEED_TICKETS.length + " Seed-Tickets nach Firestore migrieren?")) {
+          migrateTicketsToFirestore();
+        }
+      });
+      filterBar.appendChild(migrateBtn);
+    }
+
     content.appendChild(filterBar);
 
     // Filter
@@ -349,7 +406,6 @@
       const column = h("div", "kanban-column");
       column.dataset.status = col.key;
 
-      // Drop zone events
       column.addEventListener("dragover", (e) => {
         e.preventDefault();
         column.style.background = "var(--bg-elevated)";
@@ -364,10 +420,11 @@
           const changes = { status: col.key };
           if (col.key === "done") {
             changes.completed = new Date().toISOString().split("T")[0];
+          } else {
+            changes.completed = null;
           }
           updateTicket(draggedTicketId, changes);
           draggedTicketId = null;
-          renderTickets();
         }
       });
 
@@ -379,11 +436,9 @@
 
       const pOrder = { critical: 0, high: 1, medium: 2, low: 3 };
       colTickets.sort((a, b) => {
-        // Favorited tickets first (both users fav > one user fav > no fav)
         const aFavCount = (a.favs || []).length;
         const bFavCount = (b.favs || []).length;
         if (aFavCount !== bFavCount) return bFavCount - aFavCount;
-        // Then by priority
         return (pOrder[a.priority] || 3) - (pOrder[b.priority] || 3);
       });
 
@@ -394,7 +449,6 @@
       colTickets.forEach((ticket, idx) => {
         const card = h("div", "ticket");
 
-        // If beyond visible limit and not expanded, apply peek/hide
         if (!showAll && idx === VISIBLE_COUNT) {
           card.classList.add("ticket-peek");
         } else if (!showAll && idx > VISIBLE_COUNT) {
@@ -413,7 +467,6 @@
         });
         card.addEventListener("click", () => openTicketModal(ticket));
 
-        // Top row: ID + fav stars
         const topRow = h("div", "ticket-top");
         const idEl = h("span", "ticket-id", ticket.id);
         topRow.appendChild(idEl);
@@ -437,7 +490,7 @@
         const footer = h("div", "ticket-footer");
 
         const tagsEl = h("div", "ticket-tags");
-        ticket.tags.forEach((tag) => {
+        (ticket.tags || []).forEach((tag) => {
           const tagEl = h("span", "ticket-tag tag-" + tag, tag);
           tagsEl.appendChild(tagEl);
         });
@@ -466,7 +519,6 @@
         body.appendChild(card);
       });
 
-      // "Mehr anzeigen" / "Weniger" button
       if (colTickets.length > VISIBLE_COUNT + 1) {
         const remaining = colTickets.length - VISIBLE_COUNT;
         const toggleBtn = h("button", "kanban-expand-btn", expanded ? "Weniger anzeigen" : `+${remaining} weitere anzeigen`);
@@ -485,7 +537,7 @@
   }
 
   // ============================================================
-  // TICKET MODAL – with interactive actions
+  // TICKET MODAL – view + edit + delete
   // ============================================================
   const modal = document.getElementById("ticket-modal");
   const modalTitle = document.getElementById("modal-title");
@@ -502,15 +554,12 @@
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.classList.contains("hidden")) closeModal(); });
 
   function openTicketModal(ticket) {
-    // Re-read ticket with overrides
     const tickets = getTickets();
     const t = tickets.find((x) => x.id === ticket.id) || ticket;
 
     modalTitle.textContent = t.id + " \u2013 " + t.title;
-    const assignee = t.assignee ? USERS[t.assignee].display : "Unassigned";
     const statusLabels = { backlog: "Backlog", progress: "In Progress", done: "Done" };
 
-    // Build status buttons
     const statuses = ["backlog", "progress", "done"];
     const statusBtns = statuses.map((s) => {
       const active = t.status === s;
@@ -518,7 +567,6 @@
       return `<button class="${cls}" data-action="status" data-value="${s}">${statusLabels[s]}</button>`;
     }).join("");
 
-    // Build assignee buttons
     const userKeys = Object.keys(USERS);
     const assigneeBtns = userKeys.map((u) => {
       const active = t.assignee === u;
@@ -527,13 +575,24 @@
     }).join("");
     const unassignBtn = `<button class="filter-btn${!t.assignee ? " active" : ""}" data-action="assign" data-value="">Niemand</button>`;
 
-    // Fav button
     const isFaved = t.favs.includes(currentUser);
     const favBtnLabel = isFaved ? "\u2605 Favorisiert" : "\u2606 Favorit";
     const favBtnClass = isFaved ? "btn-fav active" : "btn-fav";
 
-    // Fav indicators
     const favUsers = t.favs.filter((u) => USERS[u]).map((u) => `<span class="fav-star ${USERS[u].color}" title="${USERS[u].display}">\u2605 ${USERS[u].display}</span>`).join(" ");
+
+    const priorities = ["critical", "high", "medium", "low"];
+    const prioBtns = priorities.map((p) => {
+      const active = t.priority === p;
+      const cls = active ? "filter-btn active" : "filter-btn";
+      return `<button class="${cls}" data-action="priority" data-value="${p}">${p.toUpperCase()}</button>`;
+    }).join("");
+
+    const tagBtns = ALL_TAGS.map((tag) => {
+      const active = (t.tags || []).includes(tag);
+      const cls = active ? "filter-btn active" : "filter-btn";
+      return `<button class="${cls}" data-action="tag" data-value="${tag}">${tag}</button>`;
+    }).join("");
 
     modalBody.innerHTML = `
       <div class="detail-row">
@@ -549,6 +608,18 @@
         </span>
       </div>
       <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">
+          <div class="modal-actions">${prioBtns}</div>
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Tags</span>
+        <span class="detail-value">
+          <div class="modal-actions modal-tags-wrap">${tagBtns}</div>
+        </span>
+      </div>
+      <div class="detail-row">
         <span class="detail-label">Favorit</span>
         <span class="detail-value">
           <div class="modal-actions">
@@ -558,19 +629,26 @@
         </span>
       </div>
       <div class="detail-row">
-        <span class="detail-label">Priority</span>
-        <span class="detail-value"><span class="ticket-priority priority-${t.priority}">${t.priority.toUpperCase()}</span></span>
+        <span class="detail-label">Titel</span>
+        <span class="detail-value" style="flex:1">
+          <input type="text" class="modal-input" data-field="title" value="${escHtml(t.title)}">
+        </span>
+      </div>
+      <div class="detail-row" style="align-items:flex-start">
+        <span class="detail-label">Beschreibung</span>
+        <span class="detail-value" style="flex:1">
+          <textarea class="modal-textarea" data-field="desc" rows="4">${escHtml(t.desc || "")}</textarea>
+        </span>
       </div>
       <div class="detail-row">
-        <span class="detail-label">Tags</span>
-        <span class="detail-value">${t.tags.map((tag) => `<span class="ticket-tag tag-${tag}">${tag}</span>`).join(" ")}</span>
-      </div>
-      <div class="detail-row">
-        <span class="detail-label">Created</span>
+        <span class="detail-label">Erstellt</span>
         <span class="detail-value">${t.created || "\u2013"}</span>
       </div>
-      ${t.completed ? `<div class="detail-row"><span class="detail-label">Completed</span><span class="detail-value">${t.completed}</span></div>` : ""}
-      <div class="detail-desc">${t.desc}</div>
+      ${t.completed ? `<div class="detail-row"><span class="detail-label">Erledigt</span><span class="detail-value">${t.completed}</span></div>` : ""}
+      <div class="modal-footer-actions">
+        <button class="btn-save-ticket" data-action="save">Speichern</button>
+        <button class="btn-delete-ticket" data-action="delete">Ticket loeschen</button>
+      </div>
     `;
 
     // Bind action buttons
@@ -590,21 +668,136 @@
           updateTicket(t.id, changes);
         } else if (action === "assign") {
           updateTicket(t.id, { assignee: value || null });
+        } else if (action === "priority") {
+          updateTicket(t.id, { priority: value });
+        } else if (action === "tag") {
+          const currentTags = [...(t.tags || [])];
+          const idx = currentTags.indexOf(value);
+          if (idx >= 0) currentTags.splice(idx, 1);
+          else currentTags.push(value);
+          updateTicket(t.id, { tags: currentTags });
         } else if (action === "fav") {
           toggleFav(t.id);
+        } else if (action === "save") {
+          const titleInput = modalBody.querySelector('[data-field="title"]');
+          const descInput = modalBody.querySelector('[data-field="desc"]');
+          const changes = {};
+          if (titleInput && titleInput.value !== t.title) changes.title = titleInput.value;
+          if (descInput && descInput.value !== (t.desc || "")) changes.desc = descInput.value;
+          if (Object.keys(changes).length > 0) {
+            updateTicket(t.id, changes);
+          }
+          closeModal();
+          return;
+        } else if (action === "delete") {
+          if (confirm("Ticket " + t.id + " wirklich loeschen?")) {
+            deleteTicket(t.id);
+            closeModal();
+          }
+          return;
         }
 
-        // Re-render modal and board
-        const updated = getTickets().find((x) => x.id === t.id);
-        openTicketModal(updated);
-        if (currentTab === "tickets") {
-          // Re-render kanban behind modal
-          const savedContent = content;
-          const tmpContent = h("div", "");
-          const origContent = content.innerHTML;
-          // We'll just re-render when modal closes
-        }
+        // Re-render modal with updated data (wait briefly for Firestore)
+        setTimeout(() => {
+          const updated = getTickets().find((x) => x.id === t.id);
+          if (updated) openTicketModal(updated);
+        }, 300);
       });
+    });
+
+    modal.classList.remove("hidden");
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ============================================================
+  // CREATE TICKET MODAL
+  // ============================================================
+  function openCreateModal() {
+    const newId = getNextTicketId();
+    modalTitle.textContent = "Neues Ticket erstellen";
+
+    const userOptions = Object.keys(USERS).map((u) =>
+      `<option value="${u}">${USERS[u].display}</option>`
+    ).join("");
+
+    const tagCheckboxes = ALL_TAGS.map((tag) =>
+      `<label class="tag-checkbox"><input type="checkbox" value="${tag}"><span class="ticket-tag tag-${tag}">${tag}</span></label>`
+    ).join("");
+
+    modalBody.innerHTML = `
+      <div class="detail-row">
+        <span class="detail-label">ID</span>
+        <span class="detail-value">${newId}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Titel</span>
+        <span class="detail-value" style="flex:1">
+          <input type="text" class="modal-input" id="create-title" placeholder="Ticket-Titel...">
+        </span>
+      </div>
+      <div class="detail-row" style="align-items:flex-start">
+        <span class="detail-label">Beschreibung</span>
+        <span class="detail-value" style="flex:1">
+          <textarea class="modal-textarea" id="create-desc" rows="4" placeholder="Beschreibung..."></textarea>
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Priority</span>
+        <span class="detail-value">
+          <select class="modal-select" id="create-priority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Assignee</span>
+        <span class="detail-value">
+          <select class="modal-select" id="create-assignee">
+            <option value="">Niemand</option>
+            ${userOptions}
+          </select>
+        </span>
+      </div>
+      <div class="detail-row" style="align-items:flex-start">
+        <span class="detail-label">Tags</span>
+        <span class="detail-value">
+          <div class="create-tags">${tagCheckboxes}</div>
+        </span>
+      </div>
+      <div class="modal-footer-actions">
+        <button class="btn-save-ticket" id="create-submit">Ticket erstellen</button>
+      </div>
+    `;
+
+    document.getElementById("create-submit").addEventListener("click", () => {
+      const title = document.getElementById("create-title").value.trim();
+      if (!title) {
+        document.getElementById("create-title").style.borderColor = "var(--roblox-red)";
+        return;
+      }
+
+      const tags = [];
+      modalBody.querySelectorAll('.create-tags input[type="checkbox"]:checked').forEach((cb) => {
+        tags.push(cb.value);
+      });
+
+      createTicket({
+        id: newId,
+        title,
+        desc: document.getElementById("create-desc").value.trim(),
+        status: "backlog",
+        priority: document.getElementById("create-priority").value,
+        assignee: document.getElementById("create-assignee").value || null,
+        tags,
+      });
+
+      closeModal();
     });
 
     modal.classList.remove("hidden");
@@ -619,7 +812,6 @@
     head.innerHTML = `<h2>Activity Tracker</h2><p>Wann wurde wie viel am Projekt gearbeitet</p>`;
     content.appendChild(head);
 
-    // Render calendar for each user
     const userKeys = Object.keys(USERS);
     userKeys.forEach((userKey) => {
       const card = h("div", "card");
@@ -630,7 +822,6 @@
       content.appendChild(card);
     });
 
-    // Combined view
     const combinedCard = h("div", "card card-glow-blue");
     const combinedLabel = h("div", "activity-user-header");
     combinedLabel.innerHTML = `<span class="activity-user-name">Gesamt</span>`;
@@ -638,7 +829,6 @@
     combinedCard.appendChild(buildCalendar(null));
     content.appendChild(combinedCard);
 
-    // Stats card
     const statsCard = h("div", "card");
     statsCard.innerHTML = `<h3>Statistiken</h3>`;
     const statsGrid = h("div", "grid-4");
@@ -652,7 +842,7 @@
       { label: "Erledigt", value: done, color: "var(--roblox-green)" },
       { label: "In Arbeit", value: progress, color: "var(--roblox-yellow)" },
       { label: "Backlog", value: backlog, color: "var(--text-dim)" },
-      { label: "Fortschritt", value: Math.round((done / total) * 100) + "%", color: "var(--roblox-blue)" },
+      { label: "Fortschritt", value: total > 0 ? Math.round((done / total) * 100) + "%" : "0%", color: "var(--roblox-blue)" },
     ];
 
     stats.forEach((s) => {
@@ -667,7 +857,6 @@
   function buildCalendar(userKey) {
     const wrapper = h("div", "activity-calendar-wrapper");
 
-    // Day labels
     const dayLabels = h("div", "activity-day-labels");
     ["", "Mo", "", "Mi", "", "Fr", ""].forEach((d) => {
       const lbl = h("div", "activity-day-label", d);
@@ -677,18 +866,15 @@
 
     const calendarEl = h("div", "activity-calendar");
 
-    // Build 26 weeks (half year) of day cells
     const today = new Date();
     const weeks = 26;
     const totalDays = weeks * 7;
 
-    // Find the start date (go back totalDays from end of current week)
     const endOfWeek = new Date(today);
-    endOfWeek.setDate(endOfWeek.getDate() + (6 - endOfWeek.getDay())); // end on Saturday
+    endOfWeek.setDate(endOfWeek.getDate() + (6 - endOfWeek.getDay()));
     const startDate = new Date(endOfWeek);
     startDate.setDate(startDate.getDate() - totalDays + 1);
 
-    // Month labels
     const monthBar = h("div", "activity-months");
     let lastMonth = -1;
     for (let w = 0; w < weeks; w++) {
@@ -706,7 +892,6 @@
     monthBar.style.gridTemplateColumns = `repeat(${weeks}, 1fr)`;
     wrapper.appendChild(monthBar);
 
-    // Day cells grid
     const grid = h("div", "activity-grid");
     grid.style.gridTemplateColumns = `repeat(${weeks}, 1fr)`;
     grid.style.gridTemplateRows = "repeat(7, 1fr)";
@@ -718,26 +903,22 @@
         const dateStr = cellDate.toISOString().split("T")[0];
         const cell = h("div", "activity-cell");
 
-        // Get count
         let count = 0;
         if (activityData[dateStr]) {
           if (userKey) {
             count = activityData[dateStr][userKey] || 0;
           } else {
-            // Combined
             count = Object.values(activityData[dateStr]).reduce((a, b) => a + b, 0);
           }
         }
 
-        // Also count tickets completed on this date
         const tickets = getTickets();
         tickets.forEach((t) => {
           if (t.completed === dateStr) {
-            if (!userKey || t.assignee === userKey) count += 3; // completing a ticket = 3 activity points
+            if (!userKey || t.assignee === userKey) count += 3;
           }
         });
 
-        // Color intensity
         if (cellDate > today) {
           cell.classList.add("activity-future");
         } else if (count === 0) {
@@ -763,7 +944,6 @@
     wrapper.appendChild(monthBar);
     wrapper.appendChild(calContainer);
 
-    // Legend
     const legend = h("div", "activity-legend");
     legend.innerHTML = `<span class="activity-legend-label">Weniger</span>
       <div class="activity-cell activity-0"></div>

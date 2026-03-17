@@ -1330,5 +1330,158 @@ body {
 }
 
 /* ============================================================
+   TICKET CRUD (Create, Edit, Delete)
+   ============================================================ */
+.btn-create-ticket {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: var(--gradient-primary);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.25s;
+  box-shadow: 0 2px 12px var(--roblox-blue-glow);
+}
+
+.btn-create-ticket:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px var(--roblox-blue-glow);
+}
+
+.btn-migrate {
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--roblox-yellow);
+  background: var(--roblox-yellow-glow);
+  color: var(--roblox-yellow);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-migrate:hover {
+  background: var(--roblox-yellow);
+  color: #000;
+}
+
+.modal-input, .modal-textarea, .modal-select {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-input);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.25s;
+}
+
+.modal-input:focus, .modal-textarea:focus, .modal-select:focus {
+  border-color: var(--roblox-blue);
+}
+
+.modal-textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.6;
+}
+
+.modal-select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a89a8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.modal-select option {
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+.modal-footer-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.btn-save-ticket {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 10px 24px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: var(--gradient-green);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.25s;
+  box-shadow: 0 2px 12px var(--roblox-green-glow);
+}
+
+.btn-save-ticket:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--roblox-green-glow);
+}
+
+.btn-delete-ticket {
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--roblox-red);
+  background: transparent;
+  color: var(--roblox-red);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-delete-ticket:hover {
+  background: var(--roblox-red-glow);
+}
+
+.create-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.tag-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.tag-checkbox input[type="checkbox"]:checked + .ticket-tag {
+  outline: 2px solid var(--roblox-blue);
+  outline-offset: 1px;
+}
+
+.modal-tags-wrap {
+  max-width: 100%;
+}
+
+.modal-tags-wrap .filter-btn {
+  font-size: 0.7rem;
+  padding: 3px 10px;
+}
+
+/* ============================================================
    FOOTER (removed, clean look)
    ============================================================ */

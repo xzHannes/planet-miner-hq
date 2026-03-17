@@ -45,7 +45,9 @@ const TABS = [
 // Assignee: username key from USERS or null
 // Tags: array of tag keys (mining, pickaxe, ui, audio, world, system, shop, multiplayer, bug, feature, polish)
 // ============================================================
-const TICKETS = [
+// SEED_TICKETS: Used for one-time migration to Firestore.
+// After migration, all ticket data lives in Firestore "tickets" collection.
+const SEED_TICKETS = [
   // --- BACKLOG: Kurzfristig ---
   {
     id: "PM-003",

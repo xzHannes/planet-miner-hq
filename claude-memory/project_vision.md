@@ -112,7 +112,7 @@ Spieler laufen um kleine Planeten herum und bauen Erze ab, leveln auf, schalten 
 - [x] Fredoka Font eingebaut (alle UI-Texte)
 - [x] Inferno Pickaxe mit Feuer-Effekten (AI-3D-Modell + ParticleEmitter)
 - [x] Void Pickaxe mit Ghost-Effekten (AI-3D-Modell + VoidTrail/Wisps/Souls)
-- [x] Pickaxe-Animationen: 3-Step Combo (L→R→L) mit Windup/Slam
+- [x] Pickaxe-Animationen: Basis-Swing (noch nicht final, 3-Step Combo offen)
 - [x] Per-Pickaxe Grip-Offset-System via Attribute
 - [x] Dev Dashboard (GitHub Pages + Firebase Firestore Echtzeit-Sync)
 - [x] Multi-Place Architektur: Hub als Start-Place, Stages als separate Places
@@ -128,11 +128,12 @@ Spieler laufen um kleine Planeten herum und bauen Erze ab, leveln auf, schalten 
 - [ ] Erz-Groessen-System (3 Groessen pro Typ) implementieren
 - [ ] Level-/Progressions-System mit Zielen
 - [ ] Planet-Freischaltung durch Levelup
-- [ ] Divine Lightning Pickaxe (ersetzt Frostbite, gelb, +50% Speed)
+- [x] Lightning Pickaxe (+50% Mining Speed) - bereits implementiert
 - [ ] Neues Default Pickaxe 3D-Modell
 - [ ] Equipment UI / Pickaxe Icons ueberarbeiten
 - [ ] Smarte Quest-Navigation (Nav matcht Quest-Ziele)
 - [ ] Dash-Mechanik mit Woosh-Sound (Doppel-Shift)
+- [ ] Pickaxe-Animationen: 3-Step Combo (L→R→L) mit Windup/Slam verfeinern
 
 ## Offen - Mittelfristig
 - [ ] Alle 7 Planeten fuer Sonnensystem 1 gestalten
@@ -143,6 +144,7 @@ Spieler laufen um kleine Planeten herum und bauen Erze ab, leveln auf, schalten 
 - [ ] Sonnensystem-Template-System
 - [ ] Multiplayer: Spielerlimit pro Planet
 - [ ] Taegliche Aufgaben System
+- [ ] Offline Rewards System (Belohnungen fuer Abwesenheit, motiviert zum Wiederkommen)
 
 ## Offen - Langfristig
 - [ ] Sonnensystem 2 + 3 erstellen

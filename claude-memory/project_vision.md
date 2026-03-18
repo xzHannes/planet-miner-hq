@@ -115,6 +115,13 @@ Spieler laufen um kleine Planeten herum und bauen Erze ab, leveln auf, schalten 
 - [x] Pickaxe-Animationen: 3-Step Combo (L→R→L) mit Windup/Slam
 - [x] Per-Pickaxe Grip-Offset-System via Attribute
 - [x] Dev Dashboard (GitHub Pages + Firebase Firestore Echtzeit-Sync)
+- [x] Multi-Place Architektur: Hub als Start-Place, Stages als separate Places
+- [x] TeleportService: Cross-Place Teleport mit Save-before-Teleport + TeleportData
+- [x] PlaceConfig Modul: Auto-Detection (hub/stage/studio), Place ID Mapping
+- [x] Alle Scripts place-aware (LeaderboardServer, MiningServer, ShopServer, HubClient, etc.)
+- [x] Stage1 komplett eingerichtet (Sonnensystem1, alle Scripts, OreTemplates, Pickaxes)
+- [x] DataService.forceSave() fuer sofortiges Speichern vor Teleport
+- [x] DimensionPortalClient + HubClient: TeleportService im Multi-Place Modus
 
 ## Offen - Kurzfristig
 - [ ] Sound FX Design (KI-generiert, ElevenLabs) - Swoosh, Hitsounds, Material-Sounds

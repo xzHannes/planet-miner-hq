@@ -329,7 +329,7 @@
 
   function renderTab(id) {
     content.innerHTML = "";
-    const r = { vision: renderVision, tickets: renderTickets, activity: renderActivity, systeme: renderSysteme, wirtschaft: renderWirtschaft, roadmap: renderRoadmap, reise: renderReise };
+    const r = { vision: renderVision, npcs: renderNpcs, tickets: renderTickets, activity: renderActivity, systeme: renderSysteme, wirtschaft: renderWirtschaft, roadmap: renderRoadmap, reise: renderReise };
     if (r[id]) r[id]();
   }
 
@@ -390,6 +390,70 @@
     });
     mpCard.appendChild(mpGrid);
     content.appendChild(mpCard);
+  }
+
+  // ============================================================
+  // NPCs TAB
+  // ============================================================
+  function renderNpcs() {
+    const head = h("div", "section-head");
+    head.innerHTML = `<h2>Hub NPCs</h2><p>Die 4 zentralen NPCs geben dem Hub Identitaet und machen jede Gameplay-Funktion zu einer Begegnung.</p>`;
+    content.appendChild(head);
+
+    const tagColors = {
+      purple: "var(--roblox-purple)",
+      yellow: "var(--roblox-yellow)",
+      orange: "var(--roblox-orange)",
+      blue: "var(--roblox-blue)",
+    };
+    const tagBgs = {
+      purple: "var(--roblox-purple-glow)",
+      yellow: "var(--roblox-yellow-glow)",
+      orange: "rgba(255,140,66,0.2)",
+      blue: "var(--roblox-blue-glow)",
+    };
+
+    NPCS.forEach((npc) => {
+      const card = h("div", "npc-card");
+      const accentColor = tagColors[npc.tagColor] || "var(--roblox-blue)";
+      card.style.borderLeftColor = accentColor;
+
+      card.innerHTML = `
+        <div class="npc-header">
+          <div>
+            <div class="npc-name">${npc.name}</div>
+            <div class="npc-title">${npc.title}</div>
+          </div>
+          <span class="npc-tag" style="background:${tagBgs[npc.tagColor]};color:${accentColor}">${npc.tag}</span>
+        </div>
+        <div class="npc-section">
+          <div class="npc-label">Rolle</div>
+          <div class="npc-text">${npc.role}</div>
+        </div>
+        <div class="npc-section">
+          <div class="npc-label">Funktion im Game</div>
+          <div class="npc-text">${npc.function}</div>
+        </div>
+        <div class="npc-section">
+          <div class="npc-label">Persoenlichkeit</div>
+          <div class="npc-text npc-personality">${npc.personality}</div>
+        </div>
+        <div class="npc-section">
+          <div class="npc-label">Zweck</div>
+          <div class="npc-text">${npc.purpose}</div>
+        </div>
+        <div class="npc-section">
+          <div class="npc-label">Standort</div>
+          <div class="npc-text">${npc.location}</div>
+        </div>
+        ${npc.futureHooks && npc.futureHooks.length > 0 ? `
+        <div class="npc-section">
+          <div class="npc-label">Future Hooks</div>
+          <div class="npc-hooks">${npc.futureHooks.map((hook) => `<span class="npc-hook">${hook}</span>`).join("")}</div>
+        </div>` : ""}
+      `;
+      content.appendChild(card);
+    });
   }
 
   // ============================================================

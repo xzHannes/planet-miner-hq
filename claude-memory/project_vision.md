@@ -123,7 +123,25 @@ Spieler laufen um kleine Planeten herum und bauen Erze ab, leveln auf, schalten 
 - [x] DataService.forceSave() fuer sofortiges Speichern vor Teleport
 - [x] DimensionPortalClient + HubClient: TeleportService im Multi-Place Modus
 
+## NPC-System (Stand 2026-03-20)
+4 zentrale NPCs definiert und im Dev Dashboard dokumentiert:
+1. **Wizzle the Wizard** – Dimensionsmaster, Stage-/Portal-Wechsel-NPC
+2. **Chubbs the Trader** – Haendler, ersetzt Sell-Board, Materialien verkaufen
+3. **Drillo the Miner** – Premium Gear Seller, Robux-Pickaxe-Shop
+4. **Tinker the Upgrader** – Ingenieur, Damage/Speed/Luck Upgrades
+
+NPCs sind als funktionale Ankerpunkte im Hub geplant.
+Gameplay-Loop: Abbauen → Chubbs (Sell) → Tinker (Upgrade) → Drillo (Premium) → Wizzle (neue Stage) → Loop.
+Tickets PM-040 bis PM-048 im Dashboard angelegt.
+
 ## Offen - Kurzfristig
+- [ ] NPC-System im Hub integrieren (PM-040)
+- [ ] Wizzle Stage-Wechsel-NPC (PM-041)
+- [ ] Chubbs Sell-NPC (PM-042)
+- [ ] Drillo Premium-Pickaxe-NPC (PM-043)
+- [ ] Tinker Upgrade-NPC (PM-044)
+- [ ] Hub-Button in Stage-Places sichtbar machen + TeleportService zurueck zum Hub
+- [ ] Start auf Planet statt Hub + Relog auf hoechsten freigeschalteten Planeten
 - [ ] Sound FX Design (KI-generiert, ElevenLabs) - Swoosh, Hitsounds, Material-Sounds
 - [ ] Erz-Groessen-System (3 Groessen pro Typ) implementieren
 - [ ] Level-/Progressions-System mit Zielen
@@ -136,12 +154,17 @@ Spieler laufen um kleine Planeten herum und bauen Erze ab, leveln auf, schalten 
 - [ ] Pickaxe-Animationen: 3-Step Combo (L→R→L) mit Windup/Slam verfeinern
 
 ## Offen - Mittelfristig
+- [ ] NPC-Dialog-/Prompt-System (PM-045)
+- [ ] NPC-Modelle & Platzierung im Hub (PM-046)
+- [ ] NPC-UI-Interaktionen (PM-047)
+- [ ] NPC-Lore & Animation Polish (PM-048)
 - [ ] Alle 7 Planeten fuer Sonnensystem 1 gestalten
 - [ ] Material-Liste nach Sonnensystem filtern
 - [ ] Automine Regenbogen-Effekte + Icon Button
 - [ ] Swing-Animationen weiter verfeinern
 - [ ] Hub als Raumschiff gestalten
 - [ ] Sonnensystem-Template-System
+- [ ] Per-Player Mining Nodes (jeder Spieler eigene Erz-Instanzen, kein Griefing)
 - [ ] Multiplayer: Spielerlimit pro Planet
 - [ ] Taegliche Aufgaben System
 - [ ] Offline Rewards System (Belohnungen fuer Abwesenheit, motiviert zum Wiederkommen)

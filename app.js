@@ -34,7 +34,13 @@
       if (s.a >= 1 || s.a <= 0.1) s.dir *= -1;
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(180, 200, 255, ${s.a})`;
+      // Warmer star colors: mix of blue-white, gold, and purple tints
+      const colors = [
+        `rgba(180, 200, 255, ${s.a})`,
+        `rgba(255, 220, 180, ${s.a * 0.8})`,
+        `rgba(200, 180, 255, ${s.a * 0.7})`,
+      ];
+      ctx.fillStyle = colors[Math.floor(s.x * 3) % 3];
       ctx.fill();
     });
     requestAnimationFrame(drawStars);

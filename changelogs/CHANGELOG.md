@@ -19,6 +19,8 @@ Alle abgeschlossenen Features, Fixes und Änderungen.
 - **Feature:** Wrong-Planet-Erkennung: Globe-Icon + Ziel-Planetenname + Globe-Button pulsiert (PM-122)
 - **Polish:** Studs-Distanz-Anzeige entfernt, Trail redesigned: Neon-Kugeln mit Size-Gradient (PM-123)
 - **Feature:** Spherical great-circle pathing mit Slerp-Interpolation
+- **Feature:** Quest Beacon: Klick auf HUD öffnet Planeten-Menü + highlightet Ziel-Planet (PM-124)
+- **Feature:** OrePathClient im Hub: "Go to Silver Moon" mit Beacon-Interaktion (PM-124)
 
 ### 2026-04-02 — UI Fixes, Border Shop, Stats Tracking
 - **Fix:** Damage-Zahlen zeigten "Label" statt Schadenswerte in Stage1 (PM-113)

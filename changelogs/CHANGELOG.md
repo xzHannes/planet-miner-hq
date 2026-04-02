@@ -13,11 +13,12 @@ Alle abgeschlossenen Features, Fixes und Änderungen.
 
 ## Changelog
 
-### 2026-04-03 — Ore Compass Trail
-- **Feature:** Glowing dot trail auf Planetenoberfläche zum nächsten Level-Up Erz (PM-121)
-- **Feature:** HUD Tracker mit Material-Progress + Toggle Pin
+### 2026-04-03 — Ore Compass Trail + Smart Navigation
+- **Feature:** Ore compass trail auf Planetenoberfläche zum nächsten Level-Up Erz (PM-121)
+- **Feature:** HUD Tracker mit Material-Progress, Toggle Pin, zentrierter Text
+- **Feature:** Wrong-Planet-Erkennung: Globe-Icon + Ziel-Planetenname + Globe-Button pulsiert (PM-122)
+- **Polish:** Studs-Distanz-Anzeige entfernt, Trail redesigned: Neon-Kugeln mit Size-Gradient (PM-123)
 - **Feature:** Spherical great-circle pathing mit Slerp-Interpolation
-- **Feature:** Traveling pulse animation mit PointLight Glow
 
 ### 2026-04-02 — UI Fixes, Border Shop, Stats Tracking
 - **Fix:** Damage-Zahlen zeigten "Label" statt Schadenswerte in Stage1 (PM-113)

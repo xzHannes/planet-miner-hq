@@ -89,13 +89,38 @@ Das Projekt-System soll mit dem Spiel mitwachsen:
 
 - **Neue Ordner bei neuen Features:** Wenn z.B. ein Pet-System gebaut wird, erstelle `docs/PETS.md` und ggf. einen neuen Agent dafür.
 - **Neue Agents bei Bedarf:** Wenn ein Bereich zu komplex wird (z.B. Sound-Design, Monetarisierung, Multiplayer), erstelle einen neuen Agent unter `agents/[name]/` mit README.md und prompt.md. Aktualisiere TEAM_OVERVIEW.md und diese CLAUDE.md.
-- **Parallele Agents spawnen:** Nutze Agent Teams wenn eine Aufgabe unabhängige Teilaufgaben hat. Beispiel:
+- **Agent Teams (Swarm) autonom nutzen:** Bei Aufgaben mit unabhängigen Teilaufgaben IMMER `TeamCreate` verwenden, NICHT einfache Subagents. Agent Teams = echte parallele Claude Code Instanzen mit eigenem Context Window, die untereinander kommunizieren können.
+
+  **Wann Team spawnen (autonom entscheiden):**
+  - Feature mit ≥2 unabhängigen Teilaufgaben (z.B. Server + UI parallel)
+  - Größere Implementierungen die mehrere Bereiche betreffen
+  - Wenn Design + Implementierung + Testing parallel laufen können
+  - Bei Research-Aufgaben mit mehreren Fragestellungen
+
+  **Wann KEIN Team:**
+  - Einfache Einzeländerungen (ein File, ein Fix)
+  - Streng sequentielle Aufgaben
+  - Aufgaben die dieselben Files editieren müssen
+
+  **Workflow:**
   ```
-  Erstelle ein Agent-Team:
-  - studio-engine: Implementiere NPCService (Server)
-  - ui-ux: Designe NPC-Dialog-UI parallel
+  1. TeamCreate mit beschreibendem Namen
+  2. TaskCreate für alle Teilaufgaben mit Abhängigkeiten
+  3. Teammates spawnen via Agent tool mit team_name + name Parameter
+     → Jeden Teammate mit seinem agents/[name]/prompt.md briefen
+  4. Tasks zuweisen via TaskUpdate mit owner
+  5. Teammates arbeiten parallel, kommunizieren via SendMessage
+  6. Nach Abschluss: Teammates shutdown, TeamDelete
   ```
-  Oder spawne Subagents für Research, Tests, oder parallele Implementierung.
+
+  **Teammate-Typen → Agent-Prompts:**
+  | Teammate-Name | Prompt laden von | Aufgabenbereich |
+  |---------------|-----------------|-----------------|
+  | studio-engine | `agents/studio-engine/prompt.md` | Luau-Code, Systeme |
+  | world-content | `agents/world-content/prompt.md` | Content, NPCs, Lore |
+  | ui-ux | `agents/ui-ux/prompt.md` | GUI, HUD, Menüs |
+  | qa-balance | `agents/qa-balance/prompt.md` | Testing, Balancing |
+  | project-ops | `agents/project-ops/prompt.md` | Koordination, Docs |
 - **Workflow-Optimierung:** Wenn du merkst dass ein Prozess ineffizient ist (z.B. zu viele Handoffs, zu viele Docs für einen simplen Change), passe die Regeln an. Dokumentiere die Änderung in `docs/DECISIONS.md`.
 - **Agent-Qualität prüfen:** Wenn ein Agent-Prompt nicht mehr zum aktuellen Spielstand passt, aktualisiere ihn.
 

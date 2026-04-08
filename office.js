@@ -526,26 +526,20 @@
   function renderLog() {
     const el = document.getElementById("activity-log");
     if (activityLog.length === 0) {
-      el.innerHTML = '<div class="log-empty">Waiting for agent activity...</div>';
+      el.innerHTML = '<div class="log-empty">No activity yet</div>';
       return;
     }
     el.innerHTML = activityLog.map(e => {
       const def = AGENTS[e.agent] || { color: "#6b7a96" };
-      // Extract status keyword from msg start and render as colored tag
-      const statusMatch = e.msg.match(/^(WORKING|IDLE|THINKING|WAITING|DONE)/);
-      let msgHtml;
-      if (statusMatch) {
-        const st = statusMatch[1].toLowerCase();
-        const meta = STATUS_META[st] || STATUS_META.idle;
-        const rest = e.msg.slice(statusMatch[1].length);
-        msgHtml = `<span class="log-status-tag ${meta.cls}"><span style="width:6px;height:6px;border-radius:50%;background:${meta.dot};display:inline-block"></span>${statusMatch[1]}</span><span class="log-msg">${rest}</span>`;
-      } else {
-        msgHtml = `<span class="log-msg">${e.msg}</span>`;
-      }
-      return `<div class="log-entry">
+      const statusMatch = e.msg.match(/^(WORKING|THINKING|WAITING|DONE)/);
+      const st = statusMatch ? statusMatch[1].toLowerCase() : "idle";
+      const meta = STATUS_META[st] || STATUS_META.idle;
+      const task = statusMatch ? e.msg.slice(statusMatch[1].length).trim() : e.msg;
+      return `<div class="log-entry" title="${e.agent}: ${e.msg}">
         <span class="log-time">${e.time.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</span>
-        <span class="log-agent" style="color:${def.color}">${e.agent}</span>
-        ${msgHtml}
+        <span class="log-dot" style="background:${def.color}"></span>
+        <span class="log-status-pip" style="background:${meta.dot}"></span>
+        <span class="log-task">${task || meta.label}</span>
       </div>`;
     }).join("");
   }

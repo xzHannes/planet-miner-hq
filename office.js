@@ -535,11 +535,16 @@
       const st = statusMatch ? statusMatch[1].toLowerCase() : "idle";
       const meta = STATUS_META[st] || STATUS_META.idle;
       const task = statusMatch ? e.msg.slice(statusMatch[1].length).trim() : e.msg;
+      // Token count from agent-stats (total at time of log)
+      const stats = agentStats[e.agent] || {};
+      const tok = (stats.totalInputTokens || 0) + (stats.totalOutputTokens || 0);
+      const tokTag = tok > 0 ? `<span class="log-tok">${fmtTokens(tok)}</span>` : "";
       return `<div class="log-entry">
         <span class="log-time">${e.time.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</span>
-        <span class="log-agent" style="color:${def.color}">${e.agent}</span>
+        <span class="log-agent-tag" style="background:${def.color}20;color:${def.color};border-color:${def.color}44">${e.agent}</span>
         <span class="log-status-tag ${meta.cls}"><span style="width:5px;height:5px;border-radius:50%;background:${meta.dot};display:inline-block"></span> ${statusMatch ? statusMatch[1] : "IDLE"}</span>
         <span class="log-text-wrap"><span class="log-text-inner">${task}</span></span>
+        ${tokTag}
       </div>`;
     }).join("");
   }

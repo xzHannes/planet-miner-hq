@@ -70,7 +70,12 @@
 
   // ── State ──
   let agentData = {};       // name -> firestore doc
-  let activityLog = [];     // { time, agent, msg }
+  // Load persisted activity log from localStorage
+  let activityLog = [];
+  try {
+    const saved = JSON.parse(localStorage.getItem("agent-activity-log") || "[]");
+    activityLog = saved.map(e => ({ ...e, time: new Date(e.time) }));
+  } catch (_) {}
   let frame = 0;
 
   // ── Pixel Office Canvas ──
@@ -375,6 +380,7 @@
       msg: msg,
     });
     if (activityLog.length > 50) activityLog.length = 50;
+    try { localStorage.setItem("agent-activity-log", JSON.stringify(activityLog)); } catch (_) {}
     renderLog();
   }
 
@@ -386,10 +392,21 @@
     }
     el.innerHTML = activityLog.map(e => {
       const def = AGENTS[e.agent] || { color: "#6b7a96" };
+      // Extract status keyword from msg start and render as colored tag
+      const statusMatch = e.msg.match(/^(WORKING|IDLE|THINKING|WAITING|DONE)/);
+      let msgHtml;
+      if (statusMatch) {
+        const st = statusMatch[1].toLowerCase();
+        const meta = STATUS_META[st] || STATUS_META.idle;
+        const rest = e.msg.slice(statusMatch[1].length);
+        msgHtml = `<span class="log-status-tag ${meta.cls}"><span style="width:6px;height:6px;border-radius:50%;background:${meta.dot};display:inline-block"></span>${statusMatch[1]}</span><span class="log-msg">${rest}</span>`;
+      } else {
+        msgHtml = `<span class="log-msg">${e.msg}</span>`;
+      }
       return `<div class="log-entry">
         <span class="log-time">${e.time.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</span>
         <span class="log-agent" style="color:${def.color}">${e.agent}</span>
-        <span class="log-msg">${e.msg}</span>
+        ${msgHtml}
       </div>`;
     }).join("");
   }

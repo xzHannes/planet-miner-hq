@@ -301,6 +301,19 @@ body {
   min-width: 100px;
 }
 .log-msg { color: var(--text-secondary); }
+.log-status-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.log-status-tag.status-working  { background: rgba(34,197,94,0.15);  color: var(--accent-green); }
+.log-status-tag.status-idle     { background: rgba(107,122,150,0.15); color: var(--text-muted); }
+.log-status-tag.status-thinking { background: rgba(240,180,41,0.15);  color: var(--accent-gold); }
+.log-status-tag.status-waiting  { background: rgba(251,146,60,0.15);  color: var(--accent-orange); }
+.log-status-tag.status-done     { background: rgba(34,211,238,0.15);  color: var(--accent-cyan); }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; }

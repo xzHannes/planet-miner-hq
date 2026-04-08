@@ -191,45 +191,49 @@ body {
 .status-waiting  { background: rgba(251,146,60,0.15);  color: var(--accent-orange); }
 .status-done     { background: rgba(34,211,238,0.15);  color: var(--accent-cyan); }
 
-/* ── Pokemon Team Section (3-column) ── */
+/* ── Pokemon Team Section (3-column, unified design) ── */
 .team-section {
   display: flex;
-  gap: 10px;
+  gap: 0;
   flex: 1;
   min-height: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
 }
+
+/* ── Team List (left) ── */
 .team-list {
-  width: 300px;
+  width: 260px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
 }
 .team-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--agent-color, var(--border));
-  border-radius: var(--radius-sm);
+  gap: 8px;
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  border-left: 3px solid transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
 }
+.team-row:last-child { border-bottom: none; }
 .team-row:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--border-glow);
-  transform: translateX(3px);
+  background: rgba(255,255,255,0.03);
+  border-left-color: var(--agent-color, var(--border));
 }
 .team-row-selected {
   background: var(--bg-elevated);
-  border-color: var(--agent-color, var(--border-glow));
-  border-left-width: 4px;
-  box-shadow: 0 0 12px rgba(0,0,0,0.3), inset 0 0 20px rgba(255,255,255,0.02);
+  border-left-color: var(--agent-color, var(--border-glow));
 }
 .team-sprite {
-  width: 40px; height: 40px;
+  width: 36px; height: 36px;
   image-rendering: pixelated;
   object-fit: contain;
   flex-shrink: 0;
@@ -239,163 +243,158 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 .team-pokemon {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.5rem;
+  font-size: 0.45rem;
   color: var(--text);
   text-transform: uppercase;
 }
 .team-level {
   font-family: 'Fredoka', sans-serif;
-  font-size: 0.7rem; font-weight: 700;
+  font-size: 0.65rem; font-weight: 700;
   color: var(--accent-gold);
 }
 .team-bars { display: flex; align-items: center; gap: 4px; }
 .team-xp-label {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.35rem; color: var(--accent-cyan); width: 16px;
+  font-size: 0.3rem; color: var(--accent-cyan); width: 14px;
 }
 .team-xp-track {
-  flex: 1; height: 5px;
+  flex: 1; height: 4px;
   background: rgba(255,255,255,0.08);
-  border-radius: 3px; overflow: hidden;
+  border-radius: 2px; overflow: hidden;
 }
 .team-xp-fill {
-  height: 100%; border-radius: 3px;
+  height: 100%; border-radius: 2px;
   transition: width 0.5s ease-out;
 }
 .team-xp-text {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.3rem; color: var(--text-muted);
-  width: 46px; text-align: right;
+  font-size: 0.28rem; color: var(--text-muted);
+  width: 40px; text-align: right;
 }
 .team-status-dot {
-  width: 8px; height: 8px;
+  width: 7px; height: 7px;
   border-radius: 50%; flex-shrink: 0;
 }
 
-/* ── Detail Panel (Pokemon stat screen) ── */
-.team-detail { flex: 1; min-width: 0; max-width: 480px; }
-.detail-empty {
-  height: 100%;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 8px; color: var(--text-muted); font-size: 0.8rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+/* ── Detail Panel (center) ── */
+.team-detail {
+  width: 380px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
 }
-.detail-empty-icon { font-size: 1.5rem; opacity: 0.3; }
 .det-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-glow);
-  border-radius: var(--radius);
-  overflow: hidden;
-  animation: detSlideIn 0.25s ease-out;
-  height: 100%;
   display: flex; flex-direction: column;
+  height: 100%;
+  animation: detFadeIn 0.2s ease-out;
 }
-@keyframes detSlideIn {
-  from { opacity: 0; transform: translateX(8px); }
-  to   { opacity: 1; transform: translateX(0); }
+@keyframes detFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .det-header {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 14px;
-  background: rgba(255,255,255,0.03);
+  padding: 8px 12px;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 .det-label {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.5rem; color: var(--text-muted); letter-spacing: 1px;
+  font-size: 0.45rem; color: var(--text-muted); letter-spacing: 1px;
 }
-.det-role { font-size: 0.65rem; font-weight: 600; }
+.det-role { font-size: 0.6rem; font-weight: 600; }
 .det-main {
-  display: flex; gap: 16px; padding: 14px; flex: 1;
+  display: flex; gap: 12px; padding: 12px;
+  flex: 1; align-items: flex-start;
 }
 .det-sprite-area {
   display: flex; flex-direction: column;
-  align-items: center; gap: 6px; flex-shrink: 0;
+  align-items: center; gap: 4px; flex-shrink: 0;
 }
 .det-sprite-bg {
-  width: 110px; height: 110px;
-  background: linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.15));
-  border-radius: 12px;
-  border: 2px solid rgba(255,255,255,0.06);
+  width: 96px; height: 96px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.05);
   display: flex; align-items: center; justify-content: center;
 }
 .det-sprite {
-  max-width: 88px; max-height: 88px;
+  max-width: 76px; max-height: 76px;
   image-rendering: pixelated; object-fit: contain;
 }
 .det-name {
   font-family: 'Fredoka', sans-serif;
-  font-size: 1rem; font-weight: 700; color: var(--text);
+  font-size: 0.9rem; font-weight: 700; color: var(--text);
 }
 .det-id {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.38rem; color: var(--text-muted);
+  font-size: 0.35rem; color: var(--text-muted);
 }
 .det-stats {
-  flex: 1; display: flex; flex-direction: column; gap: 4px;
+  flex: 1; display: flex; flex-direction: column; gap: 1px;
 }
 .det-stat-row {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 3px 0;
+  padding: 4px 0;
   border-bottom: 1px solid rgba(255,255,255,0.03);
 }
 .det-stat-key {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.4rem; color: var(--text-muted); letter-spacing: 0.5px;
+  font-size: 0.38rem; color: var(--text-muted); letter-spacing: 0.5px;
 }
 .det-stat-val {
   font-family: 'Fredoka', sans-serif;
-  font-size: 0.85rem; font-weight: 700; color: var(--text);
+  font-size: 0.8rem; font-weight: 700; color: var(--text);
 }
 .det-gold { color: var(--accent-gold); text-shadow: 0 0 6px rgba(240,180,41,0.3); }
 .det-status-tag {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 0.58rem; font-weight: 600;
+  font-size: 0.55rem; font-weight: 600;
   padding: 1px 6px; border-radius: 4px;
 }
 .det-footer {
-  padding: 8px 14px 10px;
+  padding: 6px 12px 8px;
   border-top: 1px solid var(--border);
-  background: rgba(0,0,0,0.15);
+  flex-shrink: 0;
 }
 .det-xp-row {
-  display: flex; justify-content: space-between; margin-bottom: 3px;
+  display: flex; justify-content: space-between; margin-bottom: 2px;
 }
 .det-xp-label {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.4rem; color: var(--text-muted);
+  font-size: 0.35rem; color: var(--text-muted);
 }
 .det-xp-nums {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.4rem; color: var(--text-secondary);
+  font-size: 0.35rem; color: var(--text-secondary);
 }
 .det-xp-track {
-  height: 8px; background: rgba(255,255,255,0.06);
-  border-radius: 4px; overflow: hidden; margin-bottom: 4px;
+  height: 6px; background: rgba(255,255,255,0.06);
+  border-radius: 3px; overflow: hidden; margin-bottom: 3px;
 }
 .det-xp-fill {
-  height: 100%; border-radius: 4px;
+  height: 100%; border-radius: 3px;
   transition: width 0.6s ease-out;
-  box-shadow: 0 0 5px currentColor;
+  box-shadow: 0 0 4px currentColor;
 }
 .det-task {
-  padding: 6px 14px 8px;
+  padding: 6px 12px 8px;
   border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 .det-task-label {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.35rem; color: var(--text-muted);
+  font-size: 0.3rem; color: var(--text-muted);
   display: block; margin-bottom: 2px;
 }
 .det-task-text {
-  font-size: 0.7rem; color: var(--text-secondary);
+  font-size: 0.65rem; color: var(--text-secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* ── Activity Log (right column) ── */
@@ -406,17 +405,16 @@ body {
   flex-direction: column;
 }
 .team-log-header {
-  font-family: 'Fredoka', sans-serif;
-  font-size: 0.8rem; font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 .activity-log {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
+  padding: 4px 10px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -429,10 +427,10 @@ body {
   padding: 24px;
 }
 .log-entry {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 0;
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 0;
   border-bottom: 1px solid rgba(255,255,255,0.03);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
 }
 .log-entry:last-child { border-bottom: none; }
 .log-time {
@@ -443,16 +441,23 @@ body {
 }
 .log-agent {
   font-weight: 600;
-  min-width: 100px;
-}
-.log-msg { color: var(--text-secondary); }
-.log-status-tag {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 0.68rem;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 5px;
+  min-width: 80px;
+  font-size: 0.65rem;
   white-space: nowrap;
+}
+.log-msg {
+  color: var(--text-secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1; min-width: 0;
+}
+.log-status-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 0.55rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .log-status-tag.status-working  { background: rgba(34,197,94,0.15);  color: var(--accent-green); }
 .log-status-tag.status-idle     { background: rgba(107,122,150,0.15); color: var(--text-muted); }
@@ -466,10 +471,14 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 /* ── Responsive ── */
+@media (max-width: 1100px) {
+  .team-detail { width: 300px; }
+}
 @media (max-width: 900px) {
-  .team-section { flex-direction: column; min-height: auto; }
-  .team-list { width: 100%; flex-direction: row; flex-wrap: wrap; gap: 4px; }
-  .team-row { flex: 1; min-width: 140px; }
+  .team-section { flex-direction: column; }
+  .team-list { width: 100%; flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  .team-row { min-width: 160px; border-bottom: none; border-right: 1px solid rgba(255,255,255,0.03); }
+  .team-detail { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
 }
 @media (max-width: 640px) {
   .office-wrapper { padding: 12px 12px 40px; }

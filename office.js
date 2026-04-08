@@ -535,11 +535,11 @@
       const st = statusMatch ? statusMatch[1].toLowerCase() : "idle";
       const meta = STATUS_META[st] || STATUS_META.idle;
       const task = statusMatch ? e.msg.slice(statusMatch[1].length).trim() : e.msg;
-      return `<div class="log-entry" title="${e.agent}: ${e.msg}">
+      return `<div class="log-entry">
         <span class="log-time">${e.time.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</span>
-        <span class="log-dot" style="background:${def.color}"></span>
-        <span class="log-status-pip" style="background:${meta.dot}"></span>
-        <span class="log-task">${task || meta.label}</span>
+        <span class="log-agent" style="color:${def.color}">${e.agent}</span>
+        <span class="log-status-tag ${meta.cls}"><span style="width:5px;height:5px;border-radius:50%;background:${meta.dot};display:inline-block"></span> ${statusMatch ? statusMatch[1] : "IDLE"}</span>
+        <span class="log-text-wrap"><span class="log-text-inner">${task}</span></span>
       </div>`;
     }).join("");
   }

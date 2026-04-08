@@ -136,11 +136,11 @@ body {
 .stat-value {
   display: block;
   font-family: 'Fredoka', sans-serif;
-  font-size: 1.1rem; font-weight: 700;
+  font-size: 1.25rem; font-weight: 700;
   color: var(--accent-blue);
 }
 .stat-label {
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -247,19 +247,19 @@ body {
 }
 .team-pokemon {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.45rem;
+  font-size: 0.55rem;
   color: var(--text);
   text-transform: uppercase;
 }
 .team-level {
   font-family: 'Fredoka', sans-serif;
-  font-size: 0.65rem; font-weight: 700;
+  font-size: 0.8rem; font-weight: 700;
   color: var(--accent-gold);
 }
 .team-bars { display: flex; align-items: center; gap: 4px; }
 .team-xp-label {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.3rem; color: var(--accent-cyan); width: 14px;
+  font-size: 0.35rem; color: var(--accent-cyan); width: 16px;
 }
 .team-xp-track {
   flex: 1; height: 4px;
@@ -282,119 +282,142 @@ body {
 
 /* ── Detail Panel (center) ── */
 .team-detail {
-  width: 380px;
+  width: 340px;
   flex-shrink: 0;
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 .det-card {
   display: flex; flex-direction: column;
   height: 100%;
-  animation: detFadeIn 0.2s ease-out;
+  animation: detFadeIn 0.25s ease-out;
 }
 @keyframes detFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from { opacity: 0; transform: scale(0.98); }
+  to   { opacity: 1; transform: scale(1); }
 }
-.det-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 12px;
+.det-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
 }
-.det-label {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.45rem; color: var(--text-muted); letter-spacing: 1px;
-}
-.det-role { font-size: 0.6rem; font-weight: 600; }
-.det-main {
-  display: flex; gap: 12px; padding: 12px;
-  flex: 1; align-items: flex-start;
-}
-.det-sprite-area {
-  display: flex; flex-direction: column;
-  align-items: center; gap: 4px; flex-shrink: 0;
-}
-.det-sprite-bg {
-  width: 96px; height: 96px;
-  background: rgba(0,0,0,0.2);
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.05);
-  display: flex; align-items: center; justify-content: center;
+.det-sprite-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 .det-sprite {
-  max-width: 76px; max-height: 76px;
+  width: 64px; height: 64px;
   image-rendering: pixelated; object-fit: contain;
+  position: relative; z-index: 1;
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
+  padding: 6px;
+  border: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
 }
-.det-name {
+.det-name-block {
+  flex: 1;
+  display: flex; flex-direction: column; gap: 2px;
+  position: relative; z-index: 1;
+}
+.det-pokemon {
   font-family: 'Fredoka', sans-serif;
-  font-size: 0.9rem; font-weight: 700; color: var(--text);
+  font-size: 1.2rem; font-weight: 700; color: var(--text);
 }
-.det-id {
+.det-agent-id {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.35rem; color: var(--text-muted);
+  font-size: 0.5rem; color: var(--text-muted);
 }
-.det-stats {
-  flex: 1; display: flex; flex-direction: column; gap: 1px;
-}
-.det-stat-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-}
-.det-stat-key {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.38rem; color: var(--text-muted); letter-spacing: 0.5px;
-}
-.det-stat-val {
+.det-level-pill {
   font-family: 'Fredoka', sans-serif;
-  font-size: 0.8rem; font-weight: 700; color: var(--text);
+  font-size: 1rem; font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(240,180,41,0.15), rgba(255,210,50,0.08));
+  border: 1px solid rgba(240,180,41,0.3);
+  color: var(--accent-gold);
+  text-shadow: 0 0 8px rgba(240,180,41,0.4);
+  position: relative; z-index: 1;
+  white-space: nowrap;
 }
-.det-gold { color: var(--accent-gold); text-shadow: 0 0 6px rgba(240,180,41,0.3); }
+.det-type-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.det-type {
+  font-size: 0.75rem; font-weight: 600;
+  padding: 3px 10px; border-radius: 6px;
+}
 .det-status-tag {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 0.55rem; font-weight: 600;
-  padding: 1px 6px; border-radius: 4px;
+  font-size: 0.7rem; font-weight: 600;
+  padding: 2px 8px; border-radius: 5px;
 }
-.det-footer {
-  padding: 6px 12px 8px;
+.det-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  padding: 0;
+  flex: 1;
+}
+.det-sg-item {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  border-right: 1px solid rgba(255,255,255,0.03);
+  transition: background 0.15s;
+}
+.det-sg-item:nth-child(3n) { border-right: none; }
+.det-sg-item:nth-last-child(-n+3) { border-bottom: none; }
+.det-sg-item:hover { background: rgba(255,255,255,0.02); }
+.det-sg-val {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.05rem; font-weight: 700; color: var(--text);
+}
+.det-sg-label {
+  font-size: 0.6rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+.det-gold { color: var(--accent-gold); text-shadow: 0 0 6px rgba(240,180,41,0.3); }
+.det-xp-section {
+  padding: 10px 16px;
   border-top: 1px solid var(--border);
   flex-shrink: 0;
 }
-.det-xp-row {
-  display: flex; justify-content: space-between; margin-bottom: 2px;
-}
-.det-xp-label {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.35rem; color: var(--text-muted);
-}
-.det-xp-nums {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.35rem; color: var(--text-secondary);
+.det-xp-header {
+  display: flex; justify-content: space-between;
+  font-size: 0.7rem; color: var(--text-muted); font-weight: 600;
+  margin-bottom: 4px;
 }
 .det-xp-track {
-  height: 6px; background: rgba(255,255,255,0.06);
-  border-radius: 3px; overflow: hidden; margin-bottom: 3px;
+  height: 8px; background: rgba(255,255,255,0.06);
+  border-radius: 4px; overflow: hidden; margin-bottom: 4px;
 }
 .det-xp-fill {
-  height: 100%; border-radius: 3px;
-  transition: width 0.6s ease-out;
-  box-shadow: 0 0 4px currentColor;
+  height: 100%; border-radius: 4px;
+  transition: width 0.8s ease-out;
+  box-shadow: 0 0 5px currentColor;
 }
-.det-task {
-  padding: 6px 12px 8px;
+.det-xp-next {
+  font-size: 0.65rem; color: var(--text-muted);
+  text-align: right;
+}
+.det-task-bar {
+  padding: 8px 16px;
   border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.det-task-label {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 0.3rem; color: var(--text-muted);
-  display: block; margin-bottom: 2px;
-}
-.det-task-text {
-  font-size: 0.65rem; color: var(--text-secondary);
+  font-size: 0.75rem; color: var(--text-secondary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.1);
 }
 
 /* ── Activity Log (right column) ── */
@@ -406,10 +429,10 @@ body {
 }
 .team-log-header {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.45rem;
+  font-size: 0.5rem;
   color: var(--text-muted);
   letter-spacing: 1px;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -428,16 +451,18 @@ body {
 }
 .log-entry {
   display: flex; align-items: center; gap: 6px;
-  padding: 5px 0;
+  padding: 4px 0;
   border-bottom: 1px solid rgba(255,255,255,0.03);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
+  min-height: 24px;
 }
 .log-entry:last-child { border-bottom: none; }
 .log-time {
   font-family: 'Press Start 2P', monospace;
-  font-size: 0.45rem;
+  font-size: 0.42rem;
   color: var(--text-muted);
-  min-width: 60px;
+  min-width: 44px;
+  flex-shrink: 0;
 }
 .log-agent {
   font-weight: 600;

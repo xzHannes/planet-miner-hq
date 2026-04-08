@@ -139,12 +139,7 @@
 
   function renderDetail() {
     const detail = document.getElementById("team-detail");
-    if (!selectedAgent) {
-      detail.innerHTML = `<div class="detail-empty"><span class="detail-empty-icon">◆</span><span>Select an agent</span></div>`;
-      return;
-    }
-
-    const name = selectedAgent;
+    const name = selectedAgent || "project-ops";
     const def = AGENTS[name];
     const stats = agentStats[name] || {};
     const data = agentData[name] || {};
@@ -165,63 +160,56 @@
 
     detail.innerHTML = `
       <div class="det-card" style="--agent-color:${def.color}">
-        <div class="det-header">
-          <span class="det-label">AGENT INFO</span>
-          <span class="det-role" style="color:${def.color}">${def.role}</span>
-        </div>
-        <div class="det-main">
-          <div class="det-sprite-area">
-            <div class="det-sprite-bg">
-              <img class="det-sprite" src="${def.spriteGif}" alt="${def.pokemon}">
-            </div>
-            <div class="det-name">${def.pokemon}</div>
-            <div class="det-id">${def.label}</div>
+        <div class="det-top">
+          <div class="det-sprite-glow" style="background:radial-gradient(circle, ${def.color}22 0%, transparent 70%)"></div>
+          <img class="det-sprite" src="${def.spriteGif}" alt="${def.pokemon}">
+          <div class="det-name-block">
+            <span class="det-pokemon">${def.pokemon}</span>
+            <span class="det-agent-id">${def.label}</span>
           </div>
-          <div class="det-stats">
-            <div class="det-stat-row">
-              <span class="det-stat-key">STATUS</span>
-              <span class="det-stat-val"><span class="det-status-tag ${meta.cls}"><span style="width:5px;height:5px;border-radius:50%;background:${meta.dot};display:inline-block"></span> ${meta.label}</span></span>
-            </div>
-            <div class="det-stat-row">
-              <span class="det-stat-key">LEVEL</span>
-              <span class="det-stat-val det-gold">${level}</span>
-            </div>
-            <div class="det-stat-row">
-              <span class="det-stat-key">TOKENS</span>
-              <span class="det-stat-val">${fmtTokens(totalTokens)}</span>
-            </div>
-            <div class="det-stat-row">
-              <span class="det-stat-key">INPUT</span>
-              <span class="det-stat-val" style="color:var(--accent-cyan)">${fmtTokens(totalInput)}</span>
-            </div>
-            <div class="det-stat-row">
-              <span class="det-stat-key">OUTPUT</span>
-              <span class="det-stat-val" style="color:var(--accent-purple)">${fmtTokens(totalOutput)}</span>
-            </div>
-            <div class="det-stat-row">
-              <span class="det-stat-key">SESSIONS</span>
-              <span class="det-stat-val">${sessions}</span>
-            </div>
-            <div class="det-stat-row">
-              <span class="det-stat-key">EST. COST</span>
-              <span class="det-stat-val" style="color:var(--accent-green)">$${cost.toFixed(2)}</span>
-            </div>
+          <div class="det-level-pill">Lv. ${level}</div>
+        </div>
+        <div class="det-type-row">
+          <span class="det-type" style="background:${def.color}20;color:${def.color};border:1px solid ${def.color}33">${def.role}</span>
+          <span class="det-status-tag ${meta.cls}"><span style="width:6px;height:6px;border-radius:50%;background:${meta.dot};display:inline-block"></span> ${meta.label}</span>
+        </div>
+        <div class="det-stats-grid">
+          <div class="det-sg-item">
+            <span class="det-sg-val">${fmtTokens(totalTokens)}</span>
+            <span class="det-sg-label">Tokens</span>
+          </div>
+          <div class="det-sg-item">
+            <span class="det-sg-val" style="color:var(--accent-cyan)">${fmtTokens(totalInput)}</span>
+            <span class="det-sg-label">Input</span>
+          </div>
+          <div class="det-sg-item">
+            <span class="det-sg-val" style="color:var(--accent-purple)">${fmtTokens(totalOutput)}</span>
+            <span class="det-sg-label">Output</span>
+          </div>
+          <div class="det-sg-item">
+            <span class="det-sg-val">${sessions}</span>
+            <span class="det-sg-label">Sessions</span>
+          </div>
+          <div class="det-sg-item">
+            <span class="det-sg-val det-gold">${xp}</span>
+            <span class="det-sg-label">Total XP</span>
+          </div>
+          <div class="det-sg-item">
+            <span class="det-sg-val" style="color:var(--accent-green)">$${cost.toFixed(2)}</span>
+            <span class="det-sg-label">Est. Cost</span>
           </div>
         </div>
-        <div class="det-footer">
-          <div class="det-xp-row">
-            <span class="det-xp-label">EXP. POINTS</span>
-            <span class="det-xp-nums">${xp}</span>
+        <div class="det-xp-section">
+          <div class="det-xp-header">
+            <span>EXP</span>
+            <span>${xpInLvl} / ${xpNeeded || "MAX"}</span>
           </div>
           <div class="det-xp-track">
             <div class="det-xp-fill" style="width:${xpRatio * 100}%;background:${def.color}"></div>
           </div>
-          <div class="det-xp-row">
-            <span class="det-xp-label">NEXT LV.</span>
-            <span class="det-xp-nums">${nextLvlXp ? (nextLvlXp - xp) : "—"}</span>
-          </div>
+          ${nextLvlXp ? `<div class="det-xp-next">Next Lv. in ${nextLvlXp - xp} XP</div>` : ""}
         </div>
-        ${data.task ? `<div class="det-task"><span class="det-task-label">CURRENT TASK</span><span class="det-task-text">${data.task}${data.description ? " — " + data.description : ""}</span></div>` : ""}
+        ${data.task ? `<div class="det-task-bar">${data.task}</div>` : ""}
       </div>
     `;
   }
@@ -530,7 +518,7 @@
       agent: agent,
       msg: msg,
     });
-    if (activityLog.length > 50) activityLog.length = 50;
+    if (activityLog.length > 25) activityLog.length = 25;
     try { localStorage.setItem("agent-activity-log", JSON.stringify(activityLog)); } catch (_) {}
     renderLog();
   }
@@ -577,8 +565,8 @@
           if (data.status === "idle") { /* skip idle spam in log */ }
           else {
             const meta = STATUS_META[data.status] || STATUS_META.idle;
-            const taskInfo = data.task ? ` → ${data.task}` : "";
-            addLogEntry(name, `${meta.label}${taskInfo}${data.description ? " — " + data.description : ""}`);
+            const taskInfo = data.task ? ` ${data.task}` : "";
+            addLogEntry(name, `${meta.label}${taskInfo}`);
           }
         }
       }

@@ -326,14 +326,15 @@ body {
 .pokemon-hover-card {
   position: fixed;
   z-index: 1000;
-  width: 260px;
-  background: var(--bg-card);
+  width: 280px;
+  background: linear-gradient(180deg, var(--bg-card) 0%, #0d1528 100%);
   border: 1px solid var(--border-glow);
-  border-radius: var(--radius);
-  box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 20px rgba(59,158,255,0.1);
+  border-radius: 16px;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.7), 0 0 24px rgba(59,158,255,0.12), inset 0 1px 0 rgba(255,255,255,0.04);
   overflow: hidden;
   pointer-events: auto;
   animation: phcFadeIn 0.2s ease;
+  backdrop-filter: blur(8px);
 }
 @keyframes phcFadeIn {
   from { opacity: 0; transform: translateY(8px); }
@@ -343,8 +344,8 @@ body {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 14px 16px;
   overflow: hidden;
 }
 .phc-header-bg {
@@ -354,15 +355,18 @@ body {
   opacity: 0.15;
 }
 .phc-sprite {
-  width: 48px;
-  height: 48px;
+  max-width: 64px;
+  max-height: 64px;
+  width: auto;
+  height: auto;
   image-rendering: pixelated;
-  border-radius: 8px;
+  border-radius: 10px;
   background: rgba(0,0,0,0.3);
   border: 1px solid rgba(255,255,255,0.1);
-  padding: 4px;
+  padding: 6px;
   position: relative;
   z-index: 1;
+  object-fit: contain;
 }
 .phc-title {
   flex: 1;
@@ -398,7 +402,7 @@ body {
   text-shadow: 0 0 8px rgba(240,180,41,0.4);
 }
 .phc-body {
-  padding: 8px 12px 12px;
+  padding: 10px 16px 14px;
 }
 .phc-xp-section {
   margin-bottom: 8px;

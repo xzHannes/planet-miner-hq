@@ -142,6 +142,27 @@ Bei Agent-Teams: Jeder Teammate updated seinen eigenen Status.
 - Web: https://xzhannes.github.io/planet-miner-hq/office.html
 - Status-Liste: `node tools/agent-status.mjs list`
 
+### Agent Stats / XP System (am Session-Ende!)
+
+Jeder Agent trackt Token-Verbrauch → XP → Level. Stats werden in Firebase (`agent-stats` Collection) gespeichert und sind im Dashboard als Pokémon-Hover-Karte sichtbar.
+
+**Am Ende jeder Session (PFLICHT):**
+```bash
+node tools/agent-stats.mjs add project-ops --input <inputTokens> --output <outputTokens>
+node tools/agent-stats.mjs add studio-engine --input <inputTokens> --output <outputTokens>
+# ... für jeden Agent der in der Session aktiv war
+```
+
+**Token-Schätzung:** Input-Tokens ≈ gelesener Context, Output-Tokens ≈ generierter Text. Bei Teams: Tokens pro Agent aufteilen basierend auf deren Arbeitslast.
+
+**Stats-Befehle:**
+```bash
+node tools/agent-stats.mjs list          # Alle Agents gerankt nach XP
+node tools/agent-stats.mjs get <agent>   # Detail-Stats eines Agents
+```
+
+**XP-System:** 1000 Tokens = 1 XP | Level 1-20 | Hover über Sprites im Dashboard zeigt Pokémon-Info-Karte
+
 ### Git (autonom)
 - **Committen wenn sinnvoll:** Nach fertigem Feature, nach Fix, nach Doc-Update, nach logischem Arbeitsblock. Nicht nach jeder Einzelzeile, nicht erst am Ende der Session.
 - **Pushen wenn sinnvoll:** Nach jedem Commit der für andere sichtbar sein sollte. Insbesondere nach Ticket-relevanten Änderungen, damit Dashboard und Docs synchron sind.
@@ -318,6 +339,7 @@ Spezialisierte Agents unter `agents/`. Jeder Agent hat ein Pokémon-Sprite im Da
 | `agents/` | Agent-Definitionen |
 | `docs/` | Design-Dokumente |
 | `tools/tickets.mjs` | Firebase Ticket CLI |
+| `tools/agent-stats.mjs` | Agent Token/XP Tracking CLI |
 | `changelogs/CHANGELOG.md` | Change-History |
 | `docs/DECISIONS.md` | Entscheidungs-Log |
 | `docs/AUTOMATION.md` | n8n + Discord Bot Pipeline (geplant) |

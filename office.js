@@ -41,9 +41,9 @@
 
   // ── Agent Definitions ──
   const AGENTS = {
-    "project-ops":    { label: "project-ops",    color: "#3b9eff", role: "Lead / Docs",     icon: "📋", x: 0, spritePng: "assets/sprites/geckarbor.png", spriteGif: "assets/sprites/geckarbor.gif", pokemon: "Geckarbor" },
+    "project-ops":    { label: "project-ops",    color: "#4eca6a", role: "Lead / Docs",     icon: "📋", x: 0, spritePng: "assets/sprites/geckarbor.png", spriteGif: "assets/sprites/geckarbor.gif", pokemon: "Geckarbor" },
     "studio-engine":  { label: "studio-engine",  color: "#fb923c", role: "Luau / Systems",   icon: "⚙️", x: 1, spritePng: "assets/sprites/enton.png",     spriteGif: "assets/sprites/enton.gif",     pokemon: "Enton" },
-    "world-content":  { label: "world-content",  color: "#22c55e", role: "Planets / NPCs",   icon: "🌍", x: 2, spritePng: "assets/sprites/bidiza.png",    spriteGif: "assets/sprites/bidiza.gif",    pokemon: "Bidiza" },
+    "world-content":  { label: "world-content",  color: "#c4956a", role: "Planets / NPCs",   icon: "🌍", x: 2, spritePng: "assets/sprites/bidiza.png",    spriteGif: "assets/sprites/bidiza.gif",    pokemon: "Bidiza" },
     "ui-ux":          { label: "ui-ux",          color: "#a78bfa", role: "GUI / HUD",        icon: "🎨", x: 3, spritePng: "assets/sprites/riolu.png",     spriteGif: "assets/sprites/riolu.gif",     pokemon: "Riolu" },
     "qa-balance":     { label: "qa-balance",     color: "#22d3ee", role: "Testing / Balance", icon: "🔍", x: 4, spritePng: "assets/sprites/felino.png",   spriteGif: "assets/sprites/felino.gif",    pokemon: "Felino" },
   };

@@ -48,6 +48,33 @@
     "qa-balance":     { label: "qa-balance",     color: "#22d3ee", role: "Testing / Balance", icon: "🔍", x: 4, spritePng: "assets/sprites/felino.png",   spriteGif: "assets/sprites/felino.gif",    pokemon: "Felino" },
   };
 
+  // ── Agent Stats (from Firebase agent-stats collection) ──
+  let agentStats = {}; // name -> { level, xp, totalInputTokens, totalOutputTokens, totalSessions, ... }
+
+  // XP/Level constants (must match agent-stats.mjs)
+  const TOKENS_PER_XP = 1000;
+  const LEVEL_TABLE = [0, 30, 80, 160, 280, 450, 680, 1000, 1400, 2000, 2800, 3800, 5000, 6500, 8500, 11000, 14000, 18000, 23000, 30000];
+
+  function getLevel(xp) {
+    let level = 1;
+    for (let i = 0; i < LEVEL_TABLE.length; i++) {
+      if (xp >= LEVEL_TABLE[i]) level = i + 1; else break;
+    }
+    return level;
+  }
+  function getXpInLevel(xp, level) { return xp - (LEVEL_TABLE[level - 1] || 0); }
+  function getXpForLevel(level) {
+    const base = LEVEL_TABLE[level - 1] || 0;
+    const next = LEVEL_TABLE[level];
+    return next ? next - base : 0;
+  }
+  function fmtTokens(n) {
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+    if (n >= 1000) return (n / 1000).toFixed(1) + "K";
+    return String(n);
+  }
+  function calcCost(inp, out) { return (inp / 1e6) * 15 + (out / 1e6) * 75; }
+
   // ── Sprite DOM Elements ──
   const spriteOverlay = document.getElementById("sprite-overlay");
   const spriteElements = {};
@@ -56,8 +83,127 @@
     img.src = AGENTS[name].spritePng;
     img.alt = AGENTS[name].pokemon;
     img.dataset.agent = name;
+    img.style.pointerEvents = "auto";
+    img.style.cursor = "pointer";
     spriteOverlay.appendChild(img);
     spriteElements[name] = img;
+  });
+
+  // ── Hover Card (Pokemon-style info popup) ──
+  const hoverCard = document.createElement("div");
+  hoverCard.className = "pokemon-hover-card";
+  hoverCard.style.display = "none";
+  document.body.appendChild(hoverCard);
+
+  let hoverTimeout = null;
+
+  function showHoverCard(name, spriteEl) {
+    const def = AGENTS[name];
+    const stats = agentStats[name] || {};
+    const data = agentData[name] || {};
+    const status = data.status || "idle";
+    const meta = STATUS_META[status] || STATUS_META.idle;
+
+    const totalInput = stats.totalInputTokens || 0;
+    const totalOutput = stats.totalOutputTokens || 0;
+    const totalTokens = totalInput + totalOutput;
+    const xp = stats.xp || Math.floor(totalTokens / TOKENS_PER_XP);
+    const level = stats.level || getLevel(xp);
+    const xpInLvl = getXpInLevel(xp, level);
+    const xpNeeded = getXpForLevel(level);
+    const xpRatio = xpNeeded > 0 ? Math.min(xpInLvl / xpNeeded, 1) : 1;
+    const cost = calcCost(totalInput, totalOutput);
+    const sessions = stats.totalSessions || 0;
+
+    hoverCard.innerHTML = `
+      <div class="phc-header" style="--agent-color: ${def.color}">
+        <div class="phc-header-bg"></div>
+        <img class="phc-sprite" src="${def.spritePng}" alt="${def.pokemon}">
+        <div class="phc-title">
+          <span class="phc-pokemon">${def.pokemon}</span>
+          <span class="phc-agent-id">${def.label}</span>
+        </div>
+        <div class="phc-level-badge">Lv.${level}</div>
+      </div>
+      <div class="phc-body">
+        <div class="phc-xp-section">
+          <div class="phc-xp-label">
+            <span>XP</span>
+            <span class="phc-xp-nums">${xpInLvl} / ${xpNeeded || "MAX"}</span>
+          </div>
+          <div class="phc-xp-track">
+            <div class="phc-xp-fill" style="width: ${xpRatio * 100}%; background: ${def.color}"></div>
+          </div>
+        </div>
+        <div class="phc-divider"></div>
+        <div class="phc-stats-grid">
+          <div class="phc-stat">
+            <span class="phc-stat-label">Type</span>
+            <span class="phc-stat-value phc-type-badge" style="background: ${def.color}22; color: ${def.color}; border: 1px solid ${def.color}44">${def.role}</span>
+          </div>
+          <div class="phc-stat">
+            <span class="phc-stat-label">Status</span>
+            <span class="phc-stat-value ${meta.cls}" style="font-size: 0.65rem">${meta.label}</span>
+          </div>
+          <div class="phc-stat">
+            <span class="phc-stat-label">Sessions</span>
+            <span class="phc-stat-value">${sessions}</span>
+          </div>
+          <div class="phc-stat">
+            <span class="phc-stat-label">Total Tokens</span>
+            <span class="phc-stat-value">${fmtTokens(totalTokens)}</span>
+          </div>
+          <div class="phc-stat">
+            <span class="phc-stat-label">Input</span>
+            <span class="phc-stat-value" style="color: var(--accent-cyan)">${fmtTokens(totalInput)}</span>
+          </div>
+          <div class="phc-stat">
+            <span class="phc-stat-label">Output</span>
+            <span class="phc-stat-value" style="color: var(--accent-purple)">${fmtTokens(totalOutput)}</span>
+          </div>
+        </div>
+        <div class="phc-divider"></div>
+        <div class="phc-cost">
+          <span class="phc-cost-label">Est. Cost (Opus 4)</span>
+          <span class="phc-cost-value">$${cost.toFixed(2)}</span>
+        </div>
+      </div>
+    `;
+
+    // Position card near sprite
+    const rect = spriteEl.getBoundingClientRect();
+    const cardW = 260;
+    let left = rect.left + rect.width / 2 - cardW / 2;
+    let top = rect.top - 10;
+
+    // Keep within viewport
+    if (left < 10) left = 10;
+    if (left + cardW > window.innerWidth - 10) left = window.innerWidth - cardW - 10;
+
+    hoverCard.style.left = left + "px";
+    hoverCard.style.bottom = (window.innerHeight - top) + "px";
+    hoverCard.style.top = "auto";
+    hoverCard.style.display = "block";
+  }
+
+  function hideHoverCard() {
+    hoverCard.style.display = "none";
+  }
+
+  // Attach hover events to sprites
+  Object.keys(AGENTS).forEach(name => {
+    const el = spriteElements[name];
+    el.addEventListener("mouseenter", () => {
+      clearTimeout(hoverTimeout);
+      showHoverCard(name, el);
+    });
+    el.addEventListener("mouseleave", () => {
+      hoverTimeout = setTimeout(hideHoverCard, 200);
+    });
+  });
+  hoverCard.addEventListener("mouseenter", () => clearTimeout(hoverTimeout));
+  hoverCard.addEventListener("mouseleave", () => {
+    hoverTimeout = setTimeout(hideHoverCard, 200);
   });
 
   const STATUS_META = {
@@ -432,6 +578,15 @@
 
     renderCards();
     updateStats();
+  });
+
+  // ── Firebase: Agent Stats Listener ──
+  db.collection("agent-stats").onSnapshot(snapshot => {
+    snapshot.docChanges().forEach(change => {
+      const data = change.doc.data();
+      const name = change.doc.id;
+      agentStats[name] = data;
+    });
   });
 
   // Initial render

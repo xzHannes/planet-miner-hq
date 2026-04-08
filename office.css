@@ -162,12 +162,19 @@ body {
   top: 0; left: 0;
   width: 100%; height: 100%;
   pointer-events: none;
+  z-index: 2;
 }
 .sprite-overlay img {
   position: absolute;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.sprite-overlay img:hover {
+  transform: scale(1.15);
+  filter: brightness(1.2) drop-shadow(0 0 8px rgba(167,139,250,0.5));
 }
 #office {
   width: 100%;
@@ -314,6 +321,162 @@ body {
 .log-status-tag.status-thinking { background: rgba(240,180,41,0.15);  color: var(--accent-gold); }
 .log-status-tag.status-waiting  { background: rgba(251,146,60,0.15);  color: var(--accent-orange); }
 .log-status-tag.status-done     { background: rgba(34,211,238,0.15);  color: var(--accent-cyan); }
+
+/* ── Pokemon Hover Card ── */
+.pokemon-hover-card {
+  position: fixed;
+  z-index: 1000;
+  width: 260px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 20px rgba(59,158,255,0.1);
+  overflow: hidden;
+  pointer-events: auto;
+  animation: phcFadeIn 0.2s ease;
+}
+@keyframes phcFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.phc-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  overflow: hidden;
+}
+.phc-header-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--agent-color, var(--accent-blue)), transparent 70%);
+  opacity: 0.15;
+}
+.phc-sprite {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 4px;
+  position: relative;
+  z-index: 1;
+}
+.phc-title {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+  z-index: 1;
+}
+.phc-pokemon {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.phc-agent-id {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+.phc-level-badge {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--accent-gold);
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 0 8px rgba(240,180,41,0.4);
+}
+.phc-body {
+  padding: 8px 12px 12px;
+}
+.phc-xp-section {
+  margin-bottom: 8px;
+}
+.phc-xp-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.phc-xp-nums {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  color: var(--text-secondary);
+}
+.phc-xp-track {
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.phc-xp-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  box-shadow: 0 0 6px currentColor;
+}
+.phc-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+.phc-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.phc-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.phc-stat-label {
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.phc-stat-value {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.phc-type-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.6rem !important;
+  width: fit-content;
+}
+.phc-cost {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.phc-cost-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+.phc-cost-value {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent-green);
+}
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; }

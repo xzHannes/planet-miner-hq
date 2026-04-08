@@ -89,21 +89,140 @@
     spriteElements[name] = img;
   });
 
-  // ── Sprite ↔ Card linking (hover sprite highlights card) ──
-  let highlightedCard = null;
+  // ── Pokemon Info Panel (click on sprite) ──
+  const pokemonPanel = document.getElementById("pokemon-panel");
+  let selectedAgent = null;
 
+  function updatePokemonPanel() {
+    if (!selectedAgent) return;
+    const name = selectedAgent;
+    const def = AGENTS[name];
+    if (!def) return;
+    const stats = agentStats[name] || {};
+    const data = agentData[name] || {};
+    const status = data.status || "idle";
+    const meta = STATUS_META[status] || STATUS_META.idle;
+
+    const totalInput = stats.totalInputTokens || 0;
+    const totalOutput = stats.totalOutputTokens || 0;
+    const totalTokens = totalInput + totalOutput;
+    const xp = stats.xp || Math.floor(totalTokens / TOKENS_PER_XP);
+    const level = stats.level || getLevel(xp);
+    const xpInLvl = getXpInLevel(xp, level);
+    const xpNeeded = getXpForLevel(level);
+    const xpRatio = xpNeeded > 0 ? Math.min(xpInLvl / xpNeeded, 1) : 1;
+    const cost = calcCost(totalInput, totalOutput);
+    const sessions = stats.totalSessions || 0;
+
+    pokemonPanel.innerHTML = `
+      <div class="pp-inner" style="--agent-color: ${def.color}">
+        <button class="pp-close" id="pp-close">&times;</button>
+        <div class="pp-left">
+          <div class="pp-sprite-wrap">
+            <img class="pp-sprite" src="${def.spriteGif}" alt="${def.pokemon}">
+          </div>
+          <div class="pp-name-section">
+            <span class="pp-pokemon">${def.pokemon}</span>
+            <span class="pp-agent-id">${def.label}</span>
+          </div>
+        </div>
+        <div class="pp-right">
+          <div class="pp-top-row">
+            <div class="pp-level-badge">Lv. ${level}</div>
+            <div class="pp-status ${meta.cls}">
+              <span style="width:6px;height:6px;border-radius:50%;background:${meta.dot};display:inline-block"></span>
+              ${meta.label}
+            </div>
+            <div class="pp-type-badge" style="background:${def.color}22;color:${def.color};border:1px solid ${def.color}44">${def.role}</div>
+          </div>
+          <div class="pp-xp-section">
+            <div class="pp-xp-label">
+              <span>XP</span>
+              <span class="pp-xp-nums">${xpInLvl} / ${xpNeeded || "MAX"}</span>
+            </div>
+            <div class="pp-xp-track">
+              <div class="pp-xp-fill" style="width:${xpRatio * 100}%;background:${def.color}"></div>
+            </div>
+          </div>
+          <div class="pp-stats-row">
+            <div class="pp-stat">
+              <span class="pp-stat-val">${fmtTokens(totalTokens)}</span>
+              <span class="pp-stat-lbl">Tokens</span>
+            </div>
+            <div class="pp-stat">
+              <span class="pp-stat-val" style="color:var(--accent-cyan)">${fmtTokens(totalInput)}</span>
+              <span class="pp-stat-lbl">Input</span>
+            </div>
+            <div class="pp-stat">
+              <span class="pp-stat-val" style="color:var(--accent-purple)">${fmtTokens(totalOutput)}</span>
+              <span class="pp-stat-lbl">Output</span>
+            </div>
+            <div class="pp-stat">
+              <span class="pp-stat-val">${sessions}</span>
+              <span class="pp-stat-lbl">Sessions</span>
+            </div>
+            <div class="pp-stat">
+              <span class="pp-stat-val" style="color:var(--accent-green)">$${cost.toFixed(2)}</span>
+              <span class="pp-stat-lbl">Est. Cost</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Close button
+    document.getElementById("pp-close").addEventListener("click", (e) => {
+      e.stopPropagation();
+      closePokemonPanel();
+    });
+  }
+
+  function openPokemonPanel(name) {
+    if (selectedAgent === name) { closePokemonPanel(); return; }
+    selectedAgent = name;
+    pokemonPanel.style.display = "block";
+    pokemonPanel.classList.remove("pp-animate");
+    void pokemonPanel.offsetWidth; // force reflow
+    pokemonPanel.classList.add("pp-animate");
+    updatePokemonPanel();
+    // Highlight matching card
+    document.querySelectorAll(".agent-card").forEach(c => c.classList.remove("card-highlighted"));
+    const card = document.querySelector(`.agent-card[data-agent="${name}"]`);
+    if (card) card.classList.add("card-highlighted");
+  }
+
+  function closePokemonPanel() {
+    selectedAgent = null;
+    pokemonPanel.style.display = "none";
+    document.querySelectorAll(".agent-card").forEach(c => c.classList.remove("card-highlighted"));
+  }
+
+  // Click on sprites
+  Object.keys(AGENTS).forEach(name => {
+    const el = spriteElements[name];
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openPokemonPanel(name);
+    });
+  });
+
+  // Click on agent cards also opens panel
+  document.getElementById("agent-grid").addEventListener("click", (e) => {
+    const card = e.target.closest(".agent-card");
+    if (card && card.dataset.agent) openPokemonPanel(card.dataset.agent);
+  });
+
+  // Hover still highlights cards
   Object.keys(AGENTS).forEach(name => {
     const el = spriteElements[name];
     el.addEventListener("mouseenter", () => {
+      if (selectedAgent) return;
       const card = document.querySelector(`.agent-card[data-agent="${name}"]`);
-      if (card) {
-        if (highlightedCard) highlightedCard.classList.remove("card-highlighted");
-        card.classList.add("card-highlighted");
-        highlightedCard = card;
-      }
+      if (card) card.classList.add("card-highlighted");
     });
     el.addEventListener("mouseleave", () => {
-      if (highlightedCard) { highlightedCard.classList.remove("card-highlighted"); highlightedCard = null; }
+      if (selectedAgent) return;
+      document.querySelectorAll(".agent-card").forEach(c => c.classList.remove("card-highlighted"));
     });
   });
 
@@ -520,6 +639,8 @@
       const name = change.doc.id;
       agentStats[name] = data;
     });
+    renderCards();
+    updatePokemonPanel();
   });
 
   // Initial render

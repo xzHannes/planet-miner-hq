@@ -378,6 +378,192 @@ body {
 .log-status-tag.status-done     { background: rgba(34,211,238,0.15);  color: var(--accent-cyan); }
 
 /* ── Pokemon Hover Card ── */
+/* ── Pokemon Info Panel (between canvas and cards) ── */
+.pokemon-panel {
+  margin-bottom: 8px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.pokemon-panel.pp-animate {
+  animation: ppSlideDown 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes ppSlideDown {
+  from { opacity: 0; max-height: 0; transform: translateY(-8px); }
+  to   { opacity: 1; max-height: 200px; transform: translateY(0); }
+}
+.pp-inner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+}
+.pp-inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--agent-color) 0%, transparent 50%);
+  opacity: 0.06;
+  pointer-events: none;
+}
+.pp-close {
+  position: absolute;
+  top: 8px; right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  z-index: 2;
+  line-height: 1;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.pp-close:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.08);
+}
+.pp-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.pp-sprite-wrap {
+  width: 72px;
+  height: 72px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.pp-sprite {
+  max-width: 60px;
+  max-height: 60px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+.pp-name-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pp-pokemon {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.pp-agent-id {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.42rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+.pp-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+.pp-top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pp-level-badge {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(240,180,41,0.15), rgba(255,210,50,0.08));
+  border: 1px solid rgba(240,180,41,0.3);
+  color: var(--accent-gold);
+  text-shadow: 0 0 8px rgba(240,180,41,0.4);
+}
+.pp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 5px;
+}
+.pp-type-badge {
+  font-size: 0.58rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 5px;
+}
+.pp-xp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pp-xp-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.pp-xp-nums {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.38rem;
+  color: var(--text-secondary);
+}
+.pp-xp-track {
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.pp-xp-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease-out;
+  box-shadow: 0 0 6px currentColor;
+}
+.pp-stats-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.pp-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.pp-stat-val {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.pp-stat-lbl {
+  font-size: 0.5rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

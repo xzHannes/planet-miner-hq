@@ -118,7 +118,7 @@
     hoverCard.innerHTML = `
       <div class="phc-header" style="--agent-color: ${def.color}">
         <div class="phc-header-bg"></div>
-        <img class="phc-sprite" src="${def.spriteGif}" alt="${def.pokemon}">
+        <img class="phc-sprite" src="${def.spritePng}" alt="${def.pokemon}">
         <div class="phc-title">
           <span class="phc-pokemon">${def.pokemon}</span>
           <span class="phc-agent-id">${def.label}</span>
@@ -170,19 +170,25 @@
       </div>
     `;
 
-    // Position card near sprite
+    // Position card below sprite
     const rect = spriteEl.getBoundingClientRect();
-    const cardW = 260;
+    const cardW = 300;
     let left = rect.left + rect.width / 2 - cardW / 2;
-    let top = rect.top - 10;
+    let top = rect.bottom + 8;
 
-    // Keep within viewport
+    // Keep within viewport horizontally
     if (left < 10) left = 10;
     if (left + cardW > window.innerWidth - 10) left = window.innerWidth - cardW - 10;
 
+    // If not enough room below, show above
+    const cardH = 380; // approximate
+    if (top + cardH > window.innerHeight - 10) {
+      top = rect.top - cardH - 8;
+    }
+
     hoverCard.style.left = left + "px";
-    hoverCard.style.bottom = (window.innerHeight - top) + "px";
-    hoverCard.style.top = "auto";
+    hoverCard.style.top = top + "px";
+    hoverCard.style.bottom = "auto";
     hoverCard.style.display = "block";
   }
 

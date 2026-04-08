@@ -142,23 +142,27 @@ Bei Agent-Teams: Jeder Teammate updated seinen eigenen Status.
 - Web: https://xzhannes.github.io/planet-miner-hq/office.html
 - Status-Liste: `node tools/agent-status.mjs list`
 
-### Agent Stats / XP System (am Session-Ende!)
+### Agent Stats / XP System (LIVE tracking!)
 
 Jeder Agent trackt Token-Verbrauch → XP → Level. Stats werden in Firebase (`agent-stats` Collection) gespeichert und sind im Dashboard als Pokémon-Hover-Karte sichtbar.
 
-**Am Ende jeder Session (PFLICHT):**
+**Bei JEDER Aufgabe Token mit-tracken** via `--input` und `--output` beim Status-Update:
 ```bash
-node tools/agent-stats.mjs add project-ops --input <inputTokens> --output <outputTokens>
-node tools/agent-stats.mjs add studio-engine --input <inputTokens> --output <outputTokens>
-# ... für jeden Agent der in der Session aktiv war
+# Aufgabe fertig → Status + Tokens in einem Befehl:
+node tools/agent-status.mjs update studio-engine --status done --progress 100 --desc "Feature X fertig" --input 25000 --output 8000
 ```
 
-**Token-Schätzung:** Input-Tokens ≈ gelesener Context, Output-Tokens ≈ generierter Text. Bei Teams: Tokens pro Agent aufteilen basierend auf deren Arbeitslast.
+**Token-Schätzung:** Input-Tokens ≈ gelesener Context (Scripts, Dateien, Prompts), Output-Tokens ≈ generierter Code/Text. Grobe Faustregel pro Aufgabe:
+- Kleine Aufgabe (1 Script lesen + editieren): ~8K input, ~3K output
+- Mittlere Aufgabe (mehrere Scripts, MCP): ~25K input, ~8K output
+- Große Aufgabe (Team-Koordination, viele Files): ~50K input, ~15K output
+- Sub-Agent in Team: ~20K input, ~10K output
 
-**Stats-Befehle:**
+**Alternativ direkt über agent-stats CLI:**
 ```bash
-node tools/agent-stats.mjs list          # Alle Agents gerankt nach XP
-node tools/agent-stats.mjs get <agent>   # Detail-Stats eines Agents
+node tools/agent-stats.mjs add <agent> --input N --output N
+node tools/agent-stats.mjs list
+node tools/agent-stats.mjs get <agent>
 ```
 
 **XP-System:** 1000 Tokens = 1 XP | Level 1-20 | Hover über Sprites im Dashboard zeigt Pokémon-Info-Karte

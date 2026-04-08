@@ -9,7 +9,7 @@
 import { initializeApp } from "firebase/app";
 import {
   getFirestore, collection, doc,
-  getDocs, setDoc, deleteDoc, serverTimestamp,
+  getDoc, getDocs, setDoc, deleteDoc, serverTimestamp,
 } from "firebase/firestore";
 
 const app = initializeApp({
@@ -23,9 +23,31 @@ const app = initializeApp({
 
 const db = getFirestore(app);
 const agentsCol = collection(db, "agents");
+const statsCol = collection(db, "agent-stats");
 
 const VALID_AGENTS = ["project-ops", "studio-engine", "world-content", "ui-ux", "qa-balance"];
 const VALID_STATUSES = ["idle", "working", "thinking", "waiting", "done"];
+
+// XP system (must match agent-stats.mjs)
+const TOKENS_PER_XP = 1000;
+const LEVEL_TABLE = [0, 30, 80, 160, 280, 450, 680, 1000, 1400, 2000, 2800, 3800, 5000, 6500, 8500, 11000, 14000, 18000, 23000, 30000];
+function getLevel(xp) { let l = 1; for (let i = 0; i < LEVEL_TABLE.length; i++) { if (xp >= LEVEL_TABLE[i]) l = i + 1; else break; } return l; }
+
+async function trackTokens(name, inputTokens, outputTokens) {
+  const ref = doc(statsCol, name);
+  const snap = await getDoc(ref);
+  const existing = snap.exists() ? snap.data() : { name, totalInputTokens: 0, totalOutputTokens: 0, totalSessions: 0, history: [] };
+  const totalInput = (existing.totalInputTokens || 0) + inputTokens;
+  const totalOutput = (existing.totalOutputTokens || 0) + outputTokens;
+  const xp = Math.floor((totalInput + totalOutput) / TOKENS_PER_XP);
+  const today = new Date().toISOString().slice(0, 10);
+  const history = existing.history || [];
+  history.push({ date: today, input: inputTokens, output: outputTokens });
+  if (history.length > 100) history.splice(0, history.length - 100);
+  await setDoc(ref, { name, totalInputTokens: totalInput, totalOutputTokens: totalOutput, totalSessions: (existing.totalSessions || 0) + 1, xp, level: getLevel(xp), history, lastSessionDate: today, updatedAt: serverTimestamp() }, { merge: true });
+  const cost = (totalInput / 1e6) * 15 + (totalOutput / 1e6) * 75;
+  console.log(`  [Stats] +${(inputTokens/1000).toFixed(1)}K in / +${(outputTokens/1000).toFixed(1)}K out → Lv.${getLevel(xp)} (${xp} XP) | $${cost.toFixed(2)}`);
+}
 
 // --- Helpers ---
 
@@ -69,6 +91,13 @@ async function cmdUpdate(name, flags) {
 
   await setDoc(doc(agentsCol, name), data, { merge: true });
   console.log(`Agent ${name} updated: ${Object.keys(data).filter((k) => !["name", "updatedAt"].includes(k)).join(", ") || "timestamp"}`);
+
+  // Auto-track tokens if provided
+  const inputTokens = parseInt(flags.input || "0", 10);
+  const outputTokens = parseInt(flags.output || "0", 10);
+  if (inputTokens > 0 || outputTokens > 0) {
+    await trackTokens(name, inputTokens, outputTokens);
+  }
 }
 
 async function cmdIdle(name) {
@@ -134,10 +163,12 @@ switch (command) {
     console.log(`Planet Miner Agent Status CLI
 
 Commands:
-  update <agent> --status X --task X --desc X [--file X] [--progress N]   Update agent status
-  idle <agent>                                                             Set agent to idle
-  list                                                                     List all agents
-  reset                                                                    Clear all agents
+  update <agent> --status X --task X --desc X [--file X] [--progress N] [--input N --output N]
+  idle <agent>
+  list
+  reset
+
+--input/--output: Token counts → auto-tracked to agent-stats (XP/Level)
 
 Agents:  ${VALID_AGENTS.join(", ")}
 Status:  ${VALID_STATUSES.join(", ")}`);

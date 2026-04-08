@@ -449,20 +449,8 @@ body {
 .phc-xp-fill {
   height: 100%;
   border-radius: 5px;
-  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 0 8px currentColor;
-  position: relative;
-}
-.phc-xp-fill::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  animation: phcXpShimmer 2s linear infinite;
-}
-@keyframes phcXpShimmer {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(200%); }
+  transition: width 0.6s ease-out;
+  box-shadow: 0 0 6px currentColor;
 }
 .phc-divider {
   height: 1px;

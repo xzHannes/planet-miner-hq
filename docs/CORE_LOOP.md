@@ -20,13 +20,15 @@ Mine Erze → Materialien sammeln → Chubbs (Sell) → Tinker (Upgrade) → Bes
 ## Sekundärer Loop (Session-to-Session)
 
 ```
-Level erreichen → Neuen Planeten freischalten → Wizzle (Portal) → Neuer Planet → Loop
+XP durch Mining sammeln → Auto-Level-Up → Neuer Planet freigeschaltet → Ore Compass zeigt Weg → Loop
 ```
 
-- Level-System mit Zielen pro Level
-- Höheres Level = längerer Progress bis zum nächsten
-- Levelup schaltet nächsten Planeten frei
-- Wizzle the Wizard als Stage-Wechsel-NPC
+- **XP-basiertes Auto-Level-System** — Spieler sammeln XP durchs Mining, Level-Up passiert automatisch
+- 21 Level definiert, an 3 Sonnensysteme gebunden (1-7, 8-14, 15-21)
+- Ore Compass Trail zeigt Weg zum nächsten Level-Up-Erz (Neon-Kugeln auf Oberfläche)
+- Quest Beacon: HUD-Klick öffnet Planeten-Menü mit Ziel-Highlight
+- Wrong-Planet-Erkennung warnt wenn Spieler auf falschem Planet ist
+- Levelup schaltet nächsten Planeten frei (via ProgressionService)
 
 ## Tertiärer Loop (Langzeit)
 
@@ -57,4 +59,4 @@ Sonnensystem 1 abschließen → Sonnensystem 2 → ... → Endgame
 
 ---
 *Gepflegt von: project-ops*
-*Letztes Update: 2026-04-01*
+*Letztes Update: 2026-04-08*

@@ -21,26 +21,30 @@
 
 _Palette wird bei Bedarf erweitert_
 
-## HUD-Layout
+## HUD-Layout (aktuell implementiert)
 
 ```
 ┌──────────────────────────────────────────┐
-│ [HP]  [Tool]              [Planet-Name]  │
+│ [Avatar] System > Planet    [Teleport→]  │
+│ [Name · Lv.X]                            │
+│ [🪙 Coins]                               │
 │                                          │
 │                                          │
-│                                    [Map] │
 │                                          │
-│                                          │
-│ [Quick-Slots 1-5]        [Credits: XXX] │
+│                          [Planet-Liste]  │
+│ Auto-Mine: OFF                           │
+│ [Lv.X] XP: XX/XXX ████████░░░           │
+│ [Pickaxe-Icon] [Hub/Mining Button] [🌍]  │
 └──────────────────────────────────────────┘
 ```
 
-- HP und Tool oben links
-- Planet-Name oben rechts
-- Minimap rechts
-- Quick-Slots unten links
-- Credits unten rechts
-- Inventar per Taste/Button öffnen (Overlay)
+- **Oben links:** Avatar mit Power-Level-Badge, System > Planet Breadcrumb, Name + Level, Coins
+- **Oben rechts:** Teleport-Button (Go to Hub / Go to Stage)
+- **Unten mitte:** Level-Badge + XP-Bar mit Shimmer-Animation
+- **Unten links:** Pickaxe-Icon (equipped)
+- **Unten rechts:** Planeten-Menü-Button (Globe)
+- **Rechts:** Planet-Liste mit Level-Lock-Anzeige (nur in Stages)
+- **Auto-Mine Toggle** unten links
 
 ## UI-Prinzipien
 1. **Weniger ist mehr:** Nur zeigen was gerade relevant ist
@@ -57,6 +61,19 @@ _Palette wird bei Bedarf erweitert_
 - **Shop (NPC):** Liste mit Preisen, Buy/Sell Tabs
 - **Dialog:** Textbox unten, Portrait links, Optionen
 
+## HUD-Farbpalette (HudClient)
+
+| Element | Farbe | RGB |
+|---------|-------|-----|
+| Panel Background | Dark Space | 12, 14, 30 |
+| Panel BG Light | Lighter Space | 22, 26, 50 |
+| Accent (Level-Badge, XP) | Purple | 120, 90, 230 |
+| Gold (Level-Up Flash) | Gold | 255, 210, 50 |
+| Green (Positive) | Emerald | 80, 210, 130 |
+| Cyan (XP Gradient) | Cyan | 60, 200, 255 |
+| Text Primary | White-ish | 240, 240, 255 |
+| Text Secondary | Muted | 160, 165, 190 |
+
 ---
 *Gepflegt von: ui-ux*
-*Letztes Update: 2026-04-01*
+*Letztes Update: 2026-04-08*

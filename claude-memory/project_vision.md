@@ -135,21 +135,22 @@ Gameplay-Loop: Abbauen → Chubbs (Sell) → Tinker (Upgrade) → Drillo (Premiu
 Tickets PM-040 bis PM-048 im Dashboard angelegt.
 
 ## Offen - Kurzfristig
+- [ ] PowerLevel-Border-Farbe unterschiedlich in Hub vs Stage1 (Bug)
 - [ ] NPC-System im Hub integrieren (PM-040)
 - [ ] Wizzle Stage-Wechsel-NPC (PM-041)
 - [ ] Chubbs Sell-NPC (PM-042)
 - [ ] Drillo Premium-Pickaxe-NPC (PM-043)
 - [ ] Tinker Upgrade-NPC (PM-044)
-- [ ] Hub-Button in Stage-Places sichtbar machen + TeleportService zurueck zum Hub
+- [x] Hub-Button in Stage-Places sichtbar machen + TeleportService zurueck zum Hub
 - [ ] Start auf Planet statt Hub + Relog auf hoechsten freigeschalteten Planeten
 - [ ] Sound FX Design (KI-generiert, ElevenLabs) - Swoosh, Hitsounds, Material-Sounds
-- [ ] Erz-Groessen-System (3 Groessen pro Typ) implementieren
-- [ ] Level-/Progressions-System mit Zielen
-- [ ] Planet-Freischaltung durch Levelup
+- [x] Erz-Groessen-System (3 Groessen pro Typ) implementiert (3-Tier-System)
+- [x] Level-/Progressions-System — XP-basiertes Auto-Level implementiert
+- [x] Planet-Freischaltung durch Levelup (via ProgressionService)
 - [x] Lightning Pickaxe (+50% Mining Speed) - bereits implementiert
 - [ ] Neues Default Pickaxe 3D-Modell
 - [ ] Equipment UI / Pickaxe Icons ueberarbeiten
-- [ ] Smarte Quest-Navigation (Nav matcht Quest-Ziele)
+- [x] Smarte Quest-Navigation — Ore Compass Trail + Quest Beacon implementiert
 - [ ] Dash-Mechanik mit Woosh-Sound (Doppel-Shift)
 - [ ] Pickaxe-Animationen: 3-Step Combo (L→R→L) mit Windup/Slam verfeinern
 

@@ -148,21 +148,44 @@ Status: `backlog`, `in-progress`, `done` | Priority: `critical`, `high`, `medium
 - **Dev Dashboard:** https://xzhannes.github.io/planet-miner-hq/
 - **Repo:** https://github.com/xzHannes/planet-miner-hq
 
-## Aktueller Spielstand
+## Aktueller Spielstand (Stand: 2026-04-08)
 
-### Fertig implementiert
-- Planeten-Lauf-Mechanik (kugelförmig, 360°)
-- Mining-System (Client + Server)
-- Shop-System (Sell, Upgrades, Pickaxes, Proximity + Click)
-- 4 Pickaxes (Default, Inferno, Void, Frostbite) + Lightning Pickaxe
-- Leaderboard-System (Power Level, Top Levels, Top Balance)
-- DataService mit Persistenz
+### Fertig implementiert — Core
+- Planeten-Lauf-Mechanik (kugelförmig, 360°, Mario Galaxy Prinzip)
+- Mining-System (Client + Server) mit 3 Erz-Tiers (klein/mittel/groß) pro Planet
+- Shop-System mit Tab-UI: Pickaxes | Borders (Sell, Upgrades, Kauf)
+- 5 Pickaxes (Default, Inferno, Void, Frostbite, Lightning)
+- 6 Upgrades: Damage, Speed, Walk Speed, Jump Power, Coin Bonus, Multi-Drop
+- DataService mit Persistenz (DataStore v2, Session Locking, forceSave)
 - Multi-Place Architektur (Hub als Start, Stages als separate Places)
-- TeleportService (Cross-Place mit Save-before-Teleport)
-- Sprint-Mechanik, Schadenszahlen, Fredoka Font
-- Balance-Config Modul (300+ Zeilen, zentral)
+- TeleportService (Cross-Place mit Save-before-Teleport + TeleportData)
+- ProgressionService (Spawn-Ziele, Planet/Stage Unlock, Place-Validierung)
+- Balance-Config Modul (300+ Zeilen, zentral, 21 Level definiert)
+- PlaceConfig (Auto-Detection hub/stage/studio)
+
+### Fertig implementiert — UI/HUD (April 2-3)
+- HudClient: Komplettes HUD mit Level-Badge, XP-Bar, Coin-Counter, Planet-Anzeige
+- NotificationClient: Level-Up-Feier mit Gold-Partikeln
+- Ore Compass Trail: Neon-Kugeln auf Planetenoberfläche zum nächsten Level-Up-Erz
+- Quest Beacon: Klick auf HUD öffnet Planeten-Menü + highlightet Ziel-Planet
+- Wrong-Planet-Erkennung: Globe-Icon + pulsierender Button wenn falscher Planet
+- Hub-Button in Stages (immer sichtbar, ausgegraut mit "Unlock at Lv. 3" wenn locked)
+- Level-Up-Button zeigt Material-Progress (z.B. "Stone 3/5")
+- Schadenszahlen an Erzen, Sprint-Mechanik, Fredoka Font
+
+### Fertig implementiert — Progression (April 4+)
+- XP-basiertes Auto-Level-System (XP durch Mining, automatisches Level-Up)
+- Stats-Tracking: Playtime, Total Ores Mined, Ores pro Material
+- Border Shop: Premium Borders (Void Ring, Inferno Crown) kaufbar
+- Border Equip: Avatar-Stroke reflektiert equipped Border
+- Leaderboard-System (Power Level, Top Levels, Top Balance) — Scaffolding
+
+### Fertig implementiert — Infrastruktur
 - Dev Dashboard mit Firebase-Ticketsystem (112+ Tickets)
 - Ticket CLI (tools/tickets.mjs) für Firebase-Zugriff aus Claude Code
+- Obsidian-Projekt für Projekt-Dokumentation
+- 5 vorkonfigurierte AI-Agents unter agents/
+- Agent Team System (TeamCreate/Swarm) für parallele Arbeit
 
 ### NPCs (designed, noch nicht implementiert)
 1. **Wizzle the Wizard** — Stage-/Portal-Wechsel
@@ -171,12 +194,11 @@ Status: `backlog`, `in-progress`, `done` | Priority: `critical`, `high`, `medium
 4. **Tinker the Upgrader** — Damage/Speed/Luck Upgrades
 
 ### Aktuell offen (Prio)
+- PowerLevel-Border-Farbe unterschiedlich in Hub vs Stage1 (Bug)
 - NPC-System im Hub integrieren (PM-040 bis PM-048)
-- Sound FX Design (KI-generiert)
-- Erz-Größen-System (3 Größen pro Typ)
-- Level-/Progressions-System mit Zielen
-- Planet-Freischaltung durch Levelup
-- Hub-Button in Stages + Zurück-Teleport
+- Sound FX Design (KI-generiert, PM-028)
+- Neues Default Pickaxe 3D-Modell (PM-023)
+- Divine Lightning Pickaxe (PM-022)
 
 ## Design-Philosophie
 - **Dopamin-Loop:** Schadenszahlen, Hitsounds, Swing-Sounds, schnelles Movement
@@ -196,19 +218,26 @@ Status: `backlog`, `in-progress`, `done` | Priority: `critical`, `high`, `medium
 
 ```
 ServerScriptService/
-├── MiningServer, ShopServer, LeaderboardServer, HubClient
-├── DataService (Persistenz + Session Locking)
-├── Balance-Config (zentral, 300+ Zeilen)
-└── PlaceConfig (Auto-Detection hub/stage/studio)
+├── MiningServer          — Mining-Logik, Erz-Respawn, 3-Tier-System
+├── ShopServer            — Sell, Upgrades, Pickaxe/Border-Kauf
+├── LeaderboardServer     — Power Level, Top Levels, Top Balance
+├── DataService           — Persistenz, Session Locking, Stats, forceSave()
+├── ProgressionService    — Spawn-Ziele, Planet/Stage Unlock, Validierung
+└── HubClient             — Hub-spezifische Server-Logik
 
-ReplicatedStorage/
-├── OreTemplates, PickaxeBuffs, HealthManager
-├── RemoteEvents
-└── Controller-Module (Camera, Anim, Planet)
+ReplicatedStorage/Shared/
+├── Config (Balance-Config) — 300+ Zeilen, alle Gameplay-Werte zentral
+├── PlaceConfig           — Auto-Detection (hub/stage/studio), Place ID Mapping
+├── OreTemplates          — Erz-Definitionen
+├── PickaxeBuffs          — Pickaxe-Statistiken und Effekte
+└── HealthManager         — HP-System für Erze
 
 StarterPlayerScripts/
-├── DimensionPortalClient
-└── weitere Client-Scripts
+├── HudClient             — Komplettes HUD (Level, XP, Coins, Planet, Shop)
+├── NotificationClient    — Level-Up-Feier, Toasts
+├── OrePathClient         — Ore Compass Trail, Quest Beacon
+├── DimensionPortalClient — Portal-UI und Teleport-Trigger
+└── Controller/ (Camera, Anim, Planet)
 ```
 
 ## Agent-Team-System

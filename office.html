@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planet Miner – Agent Office</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="office.css">
+</head>
+<body>
+  <canvas id="stars"></canvas>
+
+  <div class="office-wrapper">
+    <!-- Header -->
+    <header class="office-header">
+      <div class="header-left">
+        <div class="header-planet"></div>
+        <h1>Planet Miner</h1>
+        <span class="header-badge">MISSION CONTROL</span>
+      </div>
+      <div class="header-right">
+        <div class="live-dot"></div>
+        <span class="live-label">LIVE</span>
+        <a href="index.html" class="btn-back">Dev HQ</a>
+      </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat">
+        <span class="stat-value" id="stat-active">0</span>
+        <span class="stat-label">Active</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-idle">0</span>
+        <span class="stat-label">Idle</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-tasks">0</span>
+        <span class="stat-label">Tasks</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="stat-sync">—</span>
+        <span class="stat-label">Last Sync</span>
+      </div>
+    </div>
+
+    <!-- Pixel Office Canvas -->
+    <div class="office-canvas-wrap">
+      <canvas id="office" width="960" height="400"></canvas>
+    </div>
+
+    <!-- Agent Cards -->
+    <div class="agent-grid" id="agent-grid">
+      <!-- filled by JS -->
+    </div>
+
+    <!-- Activity Log -->
+    <div class="activity-section">
+      <h2 class="section-title">Activity Log</h2>
+      <div class="activity-log" id="activity-log">
+        <div class="log-empty">Waiting for agent activity...</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    firebase.initializeApp({
+      apiKey: "AIzaSyCs2wm0VNWRwYLVF06nsp_CbyKL1YV_sWw",
+      authDomain: "roblox-404d7.firebaseapp.com",
+      projectId: "roblox-404d7",
+      storageBucket: "roblox-404d7.firebasestorage.app",
+      messagingSenderId: "522618361608",
+      appId: "1:522618361608:web:5b6cb2c47f538f054bbebd"
+    });
+    const db = firebase.firestore();
+  </script>
+  <script src="office.js"></script>
+</body>
+</html>

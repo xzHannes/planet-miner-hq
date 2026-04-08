@@ -13,6 +13,11 @@ Alle abgeschlossenen Features, Fixes und Änderungen.
 
 ## Changelog
 
+### 2026-04-04 — XP-basiertes Auto-Level-System
+- **Feature:** XP-basiertes Auto-Level-System — Spieler sammeln XP durch Mining, Level-Up automatisch (PM-004)
+- **Feature:** XP-Bar im HUD mit animiertem Fill und Shimmer-Effekt
+- **Feature:** Level-Up-Flash-Animation (Gold-Burst auf Level-Badge)
+
 ### 2026-04-03 — Ore Compass Trail + Smart Navigation
 - **Feature:** Ore compass trail auf Planetenoberfläche zum nächsten Level-Up Erz (PM-121)
 - **Feature:** HUD Tracker mit Material-Progress, Toggle Pin, zentrierter Text

@@ -6,7 +6,8 @@ Bekannte Probleme und Einschränkungen. Wird von qa-balance und project-ops gepf
 
 | ID | Beschreibung | Schwere | Status | Seit |
 |----|-------------|---------|--------|------|
-| _Noch keine Issues_ | | | | |
+| KI-001 | PowerLevel-Border hat unterschiedliche Farbe in Hub vs Stage1 | medium | open | 2026-04-08 |
+| KI-002 | Leaderboard-System ist nur Scaffolding, keine echte Logik | low | open | 2026-04-01 |
 
 ## Status-Werte
 - **open** — Bekannt, nicht bearbeitet
@@ -17,4 +18,4 @@ Bekannte Probleme und Einschränkungen. Wird von qa-balance und project-ops gepf
 
 ---
 *Gepflegt von: qa-balance + project-ops*
-*Letztes Update: 2026-04-01*
+*Letztes Update: 2026-04-08*

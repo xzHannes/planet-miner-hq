@@ -118,7 +118,7 @@
     hoverCard.innerHTML = `
       <div class="phc-header" style="--agent-color: ${def.color}">
         <div class="phc-header-bg"></div>
-        <img class="phc-sprite" src="${def.spritePng}" alt="${def.pokemon}">
+        <img class="phc-sprite" src="${def.spriteGif}" alt="${def.pokemon}">
         <div class="phc-title">
           <span class="phc-pokemon">${def.pokemon}</span>
           <span class="phc-agent-id">${def.label}</span>

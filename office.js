@@ -64,7 +64,7 @@
   // ── Pixel Office Canvas ──
   const canvas = document.getElementById("office");
   const ctx = canvas.getContext("2d");
-  const PX = 4;  // pixel scale
+  const PX = 7;  // pixel scale
 
   // Sprite: 8x12 pixel character (row-major, 0=transparent)
   function drawSprite(sprite, ox, oy, color) {
@@ -165,23 +165,36 @@
 
   // Thought bubble
   function drawBubble(ox, oy, text) {
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
-    const bw = text.length * 5 + 8;
-    ctx.fillRect(ox * PX, oy * PX, bw, 12);
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
-    ctx.fillRect((ox + 1) * PX, (oy + 3) * PX, PX, PX);
-    ctx.fillRect(ox * PX, (oy + 2) * PX, PX * 0.7, PX * 0.7);
+    const fontSize = 11;
+    ctx.font = `${fontSize}px 'Press Start 2P'`;
+    const tw = ctx.measureText(text).width;
+    const bw = tw + 16;
+    const bh = fontSize + 10;
+    const bx = ox * PX;
+    const by = oy * PX - 4;
+    // Bubble body
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.beginPath();
+    ctx.roundRect(bx, by, bw, bh, 4);
+    ctx.fill();
+    // Tail
+    ctx.beginPath();
+    ctx.moveTo(bx + 8, by + bh);
+    ctx.lineTo(bx + 4, by + bh + 6);
+    ctx.lineTo(bx + 14, by + bh);
+    ctx.fill();
+    // Text
     ctx.fillStyle = "#111";
-    ctx.font = "8px 'Press Start 2P'";
-    ctx.fillText(text, ox * PX + 4, oy * PX + 9);
+    ctx.fillText(text, bx + 8, by + fontSize + 3);
   }
 
   // Floor pattern
   function drawFloor() {
+    const floorY = 42;
     for (let x = 0; x < canvas.width / PX; x++) {
-      for (let y = 70; y < canvas.height / PX; y++) {
-        if ((x + y) % 8 === 0) {
-          ctx.fillStyle = "rgba(30,45,74,0.3)";
+      for (let y = floorY; y < canvas.height / PX; y++) {
+        if ((x + y) % 6 === 0) {
+          ctx.fillStyle = "rgba(30,45,74,0.25)";
           ctx.fillRect(x * PX, y * PX, PX, PX);
         }
       }
@@ -191,73 +204,72 @@
   // ── Render Office ──
   function renderOffice() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const W = canvas.width;
+    const H = canvas.height;
 
     // Background
     ctx.fillStyle = "#0b1120";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, W, H);
 
     // Wall
+    const wallH = 40;
     ctx.fillStyle = "#111827";
-    ctx.fillRect(0, 0, canvas.width, 70 * PX);
+    ctx.fillRect(0, 0, W, wallH * PX);
 
     // Wall accent line
     ctx.fillStyle = "#1e2d4a";
-    ctx.fillRect(0, 68 * PX, canvas.width, 2 * PX);
+    ctx.fillRect(0, (wallH - 1) * PX, W, PX);
 
-    // Window (stars)
+    // Window 1
+    const winW = 24; const winH = 16;
     ctx.fillStyle = "#060a14";
-    ctx.fillRect(30 * PX, 8 * PX, 40 * PX, 25 * PX);
-    ctx.strokeStyle = "#2a3552";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(30 * PX, 8 * PX, 40 * PX, 25 * PX);
-
-    // Window stars
-    for (let i = 0; i < 12; i++) {
+    ctx.fillRect(10 * PX, 5 * PX, winW * PX, winH * PX);
+    ctx.strokeStyle = "#2a3552"; ctx.lineWidth = 3;
+    ctx.strokeRect(10 * PX, 5 * PX, winW * PX, winH * PX);
+    for (let i = 0; i < 10; i++) {
       ctx.fillStyle = `rgba(255,255,255,${0.3 + Math.random() * 0.5})`;
-      ctx.fillRect((32 + Math.random() * 36) * PX, (10 + Math.random() * 21) * PX, PX * 0.5, PX * 0.5);
+      ctx.fillRect((12 + Math.random() * 20) * PX, (7 + Math.random() * 12) * PX, PX * 0.6, PX * 0.6);
     }
 
-    // Planet in window
+    // Planet in window 1
     const planetPulse = Math.sin(frame * 0.02) * 0.5 + 0.5;
     ctx.fillStyle = `rgba(59,158,255,${0.3 + planetPulse * 0.2})`;
-    ctx.beginPath();
-    ctx.arc(50 * PX, 20 * PX, 6 * PX, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(22 * PX, 13 * PX, 5 * PX, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = `rgba(167,139,250,${0.2 + planetPulse * 0.1})`;
-    ctx.beginPath();
-    ctx.arc(50 * PX, 20 * PX, 4 * PX, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(22 * PX, 13 * PX, 3 * PX, 0, Math.PI * 2); ctx.fill();
 
-    // Second window
+    // "MISSION CONTROL" on wall
+    ctx.fillStyle = "#2a3f66";
+    ctx.font = "bold 18px 'Press Start 2P'";
+    ctx.textAlign = "center";
+    ctx.fillText("MISSION CONTROL", W / 2, 20 * PX);
+    ctx.textAlign = "left";
+
+    // Window 2
     ctx.fillStyle = "#060a14";
-    ctx.fillRect(160 * PX, 8 * PX, 40 * PX, 25 * PX);
-    ctx.strokeStyle = "#2a3552";
-    ctx.strokeRect(160 * PX, 8 * PX, 40 * PX, 25 * PX);
-
+    ctx.fillRect((200 - 10 - winW) * PX, 5 * PX, winW * PX, winH * PX);
+    ctx.strokeRect((200 - 10 - winW) * PX, 5 * PX, winW * PX, winH * PX);
     for (let i = 0; i < 8; i++) {
       ctx.fillStyle = `rgba(255,255,255,${0.3 + Math.random() * 0.5})`;
-      ctx.fillRect((162 + Math.random() * 36) * PX, (10 + Math.random() * 21) * PX, PX * 0.5, PX * 0.5);
+      ctx.fillRect(((200 - 10 - winW + 2) + Math.random() * 20) * PX, (7 + Math.random() * 12) * PX, PX * 0.6, PX * 0.6);
     }
-
-    // "MISSION CONTROL" text on wall
-    ctx.fillStyle = "#1e2d4a";
-    ctx.font = "bold 10px 'Press Start 2P'";
-    ctx.fillText("MISSION CONTROL", 88 * PX, 22 * PX);
 
     drawFloor();
 
     // Draw each agent workstation
     const names = Object.keys(AGENTS);
-    const spacing = Math.floor(canvas.width / PX / names.length);
-    const useTyping = Math.floor(frame / 20) % 2 === 0; // typing animation toggle
+    const totalW = canvas.width / PX;
+    const margin = 12;
+    const slotW = (totalW - margin * 2) / names.length;
+    const useTyping = Math.floor(frame / 20) % 2 === 0;
 
     names.forEach((name, i) => {
       const def = AGENTS[name];
       const data = agentData[name] || { status: "idle" };
       const status = data.status || "idle";
-      const cx = 12 + i * spacing;
-      const deskY = 78;
-      const charY = deskY - 12;
+      const cx = Math.floor(margin + i * slotW + slotW / 2 - 4);
+      const deskY = 62;
+      const charY = deskY - 14;
 
       // Desk
       drawDesk(cx - 4, deskY);
@@ -268,8 +280,8 @@
 
       // Monitor glow
       if (monitorActive) {
-        ctx.fillStyle = `rgba(34,197,94,${0.05 + Math.sin(frame * 0.05) * 0.03})`;
-        ctx.fillRect((cx - 1) * PX, (deskY - 8) * PX, 10 * PX, 10 * PX);
+        ctx.fillStyle = `rgba(34,197,94,${0.06 + Math.sin(frame * 0.05) * 0.04})`;
+        ctx.fillRect((cx - 2) * PX, (deskY - 9) * PX, 12 * PX, 12 * PX);
       }
 
       // Character
@@ -282,29 +294,32 @@
       const meta = STATUS_META[status] || STATUS_META.idle;
       ctx.fillStyle = meta.dot;
       ctx.beginPath();
-      ctx.arc((cx + 4) * PX, (charY - 3) * PX, 3, 0, Math.PI * 2);
+      ctx.arc((cx + 4) * PX, (charY - 2) * PX, 5, 0, Math.PI * 2);
       ctx.fill();
+      // Dot glow for active
+      if (status === "working" || status === "thinking") {
+        ctx.fillStyle = meta.dot.replace(")", ",0.3)").replace("rgb", "rgba");
+        ctx.beginPath(); ctx.arc((cx + 4) * PX, (charY - 2) * PX, 9, 0, Math.PI * 2); ctx.fill();
+      }
 
       // Thought bubble for working/thinking agents
       if (status === "working" && data.task) {
-        drawBubble(cx + 6, charY - 4, data.task);
+        drawBubble(cx + 7, charY - 5, data.task);
       } else if (status === "thinking") {
         const dots = ".".repeat((Math.floor(frame / 15) % 3) + 1);
-        drawBubble(cx + 6, charY - 4, dots);
+        drawBubble(cx + 7, charY - 5, dots);
       }
 
       // Name label
       ctx.fillStyle = def.color;
-      ctx.font = "6px 'Press Start 2P'";
+      ctx.font = "11px 'Press Start 2P'";
       ctx.textAlign = "center";
-      ctx.fillText(def.label, (cx + 4) * PX, (deskY + 10) * PX);
-      ctx.textAlign = "left";
+      ctx.fillText(def.label, (cx + 4) * PX, (deskY + 11) * PX);
 
       // Role label
       ctx.fillStyle = "#6b7a96";
-      ctx.font = "5px 'Press Start 2P'";
-      ctx.textAlign = "center";
-      ctx.fillText(def.role, (cx + 4) * PX, (deskY + 14) * PX);
+      ctx.font = "9px 'Press Start 2P'";
+      ctx.fillText(def.role, (cx + 4) * PX, (deskY + 15) * PX);
       ctx.textAlign = "left";
     });
 

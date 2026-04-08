@@ -89,15 +89,63 @@
     spriteElements[name] = img;
   });
 
-  // ── Pokemon Info Panel (click on sprite) ──
-  const pokemonPanel = document.getElementById("pokemon-panel");
+  // ── Pokemon Team UI ──
   let selectedAgent = null;
 
-  function updatePokemonPanel() {
-    if (!selectedAgent) return;
+  function renderTeamList() {
+    const list = document.getElementById("team-list");
+    list.innerHTML = "";
+
+    Object.keys(AGENTS).forEach(name => {
+      const def = AGENTS[name];
+      const data = agentData[name] || {};
+      const stats = agentStats[name] || {};
+      const status = data.status || "idle";
+      const meta = STATUS_META[status] || STATUS_META.idle;
+      const isActive = status === "working" || status === "thinking";
+
+      const totalTokens = (stats.totalInputTokens || 0) + (stats.totalOutputTokens || 0);
+      const xp = stats.xp || Math.floor(totalTokens / TOKENS_PER_XP);
+      const level = stats.level || getLevel(xp);
+      const xpInLvl = getXpInLevel(xp, level);
+      const xpNeeded = getXpForLevel(level);
+      const xpRatio = xpNeeded > 0 ? Math.min(xpInLvl / xpNeeded, 1) : 1;
+
+      const row = document.createElement("div");
+      row.className = `team-row${selectedAgent === name ? " team-row-selected" : ""}`;
+      row.dataset.agent = name;
+      row.style.setProperty("--agent-color", def.color);
+      row.innerHTML = `
+        <img class="team-sprite" src="${isActive ? def.spriteGif : def.spritePng}" alt="${def.pokemon}">
+        <div class="team-info">
+          <div class="team-name-row">
+            <span class="team-pokemon">${def.pokemon}</span>
+            <span class="team-level">Lv.${level}</span>
+          </div>
+          <div class="team-bars">
+            <div class="team-xp-label">XP</div>
+            <div class="team-xp-track">
+              <div class="team-xp-fill" style="width:${xpRatio * 100}%;background:${def.color}"></div>
+            </div>
+            <span class="team-xp-text">${xpInLvl}/${xpNeeded || "MAX"}</span>
+          </div>
+        </div>
+        <div class="team-status-dot" style="background:${meta.dot}${isActive ? ';box-shadow:0 0 6px ' + meta.dot : ''}"></div>
+      `;
+      row.addEventListener("click", () => selectAgent(name));
+      list.appendChild(row);
+    });
+  }
+
+  function renderDetail() {
+    const detail = document.getElementById("team-detail");
+    if (!selectedAgent) {
+      detail.innerHTML = `<div class="detail-empty"><span class="detail-empty-icon">◆</span><span>Select an agent</span></div>`;
+      return;
+    }
+
     const name = selectedAgent;
     const def = AGENTS[name];
-    if (!def) return;
     const stats = agentStats[name] || {};
     const data = agentData[name] || {};
     const status = data.status || "idle";
@@ -113,116 +161,84 @@
     const xpRatio = xpNeeded > 0 ? Math.min(xpInLvl / xpNeeded, 1) : 1;
     const cost = calcCost(totalInput, totalOutput);
     const sessions = stats.totalSessions || 0;
+    const nextLvlXp = LEVEL_TABLE[level] || null;
 
-    pokemonPanel.innerHTML = `
-      <div class="pp-inner" style="--agent-color: ${def.color}">
-        <button class="pp-close" id="pp-close">&times;</button>
-        <div class="pp-left">
-          <div class="pp-sprite-wrap">
-            <img class="pp-sprite" src="${def.spriteGif}" alt="${def.pokemon}">
-          </div>
-          <div class="pp-name-section">
-            <span class="pp-pokemon">${def.pokemon}</span>
-            <span class="pp-agent-id">${def.label}</span>
-          </div>
+    detail.innerHTML = `
+      <div class="det-card" style="--agent-color:${def.color}">
+        <div class="det-header">
+          <span class="det-label">AGENT INFO</span>
+          <span class="det-role" style="color:${def.color}">${def.role}</span>
         </div>
-        <div class="pp-right">
-          <div class="pp-top-row">
-            <div class="pp-level-badge">Lv. ${level}</div>
-            <div class="pp-status ${meta.cls}">
-              <span style="width:6px;height:6px;border-radius:50%;background:${meta.dot};display:inline-block"></span>
-              ${meta.label}
+        <div class="det-main">
+          <div class="det-sprite-area">
+            <div class="det-sprite-bg">
+              <img class="det-sprite" src="${def.spriteGif}" alt="${def.pokemon}">
             </div>
-            <div class="pp-type-badge" style="background:${def.color}22;color:${def.color};border:1px solid ${def.color}44">${def.role}</div>
+            <div class="det-name">${def.pokemon}</div>
+            <div class="det-id">${def.label}</div>
           </div>
-          <div class="pp-xp-section">
-            <div class="pp-xp-label">
-              <span>XP</span>
-              <span class="pp-xp-nums">${xpInLvl} / ${xpNeeded || "MAX"}</span>
+          <div class="det-stats">
+            <div class="det-stat-row">
+              <span class="det-stat-key">STATUS</span>
+              <span class="det-stat-val"><span class="det-status-tag ${meta.cls}"><span style="width:5px;height:5px;border-radius:50%;background:${meta.dot};display:inline-block"></span> ${meta.label}</span></span>
             </div>
-            <div class="pp-xp-track">
-              <div class="pp-xp-fill" style="width:${xpRatio * 100}%;background:${def.color}"></div>
+            <div class="det-stat-row">
+              <span class="det-stat-key">LEVEL</span>
+              <span class="det-stat-val det-gold">${level}</span>
             </div>
-          </div>
-          <div class="pp-stats-row">
-            <div class="pp-stat">
-              <span class="pp-stat-val">${fmtTokens(totalTokens)}</span>
-              <span class="pp-stat-lbl">Tokens</span>
+            <div class="det-stat-row">
+              <span class="det-stat-key">TOKENS</span>
+              <span class="det-stat-val">${fmtTokens(totalTokens)}</span>
             </div>
-            <div class="pp-stat">
-              <span class="pp-stat-val" style="color:var(--accent-cyan)">${fmtTokens(totalInput)}</span>
-              <span class="pp-stat-lbl">Input</span>
+            <div class="det-stat-row">
+              <span class="det-stat-key">INPUT</span>
+              <span class="det-stat-val" style="color:var(--accent-cyan)">${fmtTokens(totalInput)}</span>
             </div>
-            <div class="pp-stat">
-              <span class="pp-stat-val" style="color:var(--accent-purple)">${fmtTokens(totalOutput)}</span>
-              <span class="pp-stat-lbl">Output</span>
+            <div class="det-stat-row">
+              <span class="det-stat-key">OUTPUT</span>
+              <span class="det-stat-val" style="color:var(--accent-purple)">${fmtTokens(totalOutput)}</span>
             </div>
-            <div class="pp-stat">
-              <span class="pp-stat-val">${sessions}</span>
-              <span class="pp-stat-lbl">Sessions</span>
+            <div class="det-stat-row">
+              <span class="det-stat-key">SESSIONS</span>
+              <span class="det-stat-val">${sessions}</span>
             </div>
-            <div class="pp-stat">
-              <span class="pp-stat-val" style="color:var(--accent-green)">$${cost.toFixed(2)}</span>
-              <span class="pp-stat-lbl">Est. Cost</span>
+            <div class="det-stat-row">
+              <span class="det-stat-key">EST. COST</span>
+              <span class="det-stat-val" style="color:var(--accent-green)">$${cost.toFixed(2)}</span>
             </div>
           </div>
         </div>
+        <div class="det-footer">
+          <div class="det-xp-row">
+            <span class="det-xp-label">EXP. POINTS</span>
+            <span class="det-xp-nums">${xp}</span>
+          </div>
+          <div class="det-xp-track">
+            <div class="det-xp-fill" style="width:${xpRatio * 100}%;background:${def.color}"></div>
+          </div>
+          <div class="det-xp-row">
+            <span class="det-xp-label">NEXT LV.</span>
+            <span class="det-xp-nums">${nextLvlXp ? (nextLvlXp - xp) : "—"}</span>
+          </div>
+        </div>
+        ${data.task ? `<div class="det-task"><span class="det-task-label">CURRENT TASK</span><span class="det-task-text">${data.task}${data.description ? " — " + data.description : ""}</span></div>` : ""}
       </div>
     `;
-
-    // Close button
-    document.getElementById("pp-close").addEventListener("click", (e) => {
-      e.stopPropagation();
-      closePokemonPanel();
-    });
   }
 
-  function openPokemonPanel(name) {
-    if (selectedAgent === name) { closePokemonPanel(); return; }
-    selectedAgent = name;
-    pokemonPanel.style.display = "block";
-    pokemonPanel.classList.remove("pp-animate");
-    void pokemonPanel.offsetWidth; // force reflow
-    pokemonPanel.classList.add("pp-animate");
-    updatePokemonPanel();
-    // Highlight matching card
-    document.querySelectorAll(".agent-card").forEach(c => c.classList.remove("card-highlighted"));
-    const card = document.querySelector(`.agent-card[data-agent="${name}"]`);
-    if (card) card.classList.add("card-highlighted");
+  function updatePokemonPanel() { renderDetail(); }
+
+  function selectAgent(name) {
+    selectedAgent = selectedAgent === name ? null : name;
+    renderTeamList();
+    renderDetail();
   }
 
-  function closePokemonPanel() {
-    selectedAgent = null;
-    pokemonPanel.style.display = "none";
-    document.querySelectorAll(".agent-card").forEach(c => c.classList.remove("card-highlighted"));
-  }
-
-  // Click on sprites
+  // Click on canvas sprites selects agent
   Object.keys(AGENTS).forEach(name => {
-    const el = spriteElements[name];
-    el.addEventListener("click", (e) => {
+    spriteElements[name].addEventListener("click", (e) => {
       e.stopPropagation();
-      openPokemonPanel(name);
-    });
-  });
-
-  // Click on agent cards also opens panel
-  document.getElementById("agent-grid").addEventListener("click", (e) => {
-    const card = e.target.closest(".agent-card");
-    if (card && card.dataset.agent) openPokemonPanel(card.dataset.agent);
-  });
-
-  // Hover still highlights cards
-  Object.keys(AGENTS).forEach(name => {
-    const el = spriteElements[name];
-    el.addEventListener("mouseenter", () => {
-      if (selectedAgent) return;
-      const card = document.querySelector(`.agent-card[data-agent="${name}"]`);
-      if (card) card.classList.add("card-highlighted");
-    });
-    el.addEventListener("mouseleave", () => {
-      if (selectedAgent) return;
-      document.querySelectorAll(".agent-card").forEach(c => c.classList.remove("card-highlighted"));
+      selectAgent(name);
     });
   });
 
@@ -490,67 +506,7 @@
   }
 
   // ── Render Agent Cards ──
-  function renderCards() {
-    const grid = document.getElementById("agent-grid");
-    grid.innerHTML = "";
-
-    Object.keys(AGENTS).forEach(name => {
-      const def = AGENTS[name];
-      const data = agentData[name] || {};
-      const stats = agentStats[name] || {};
-      const status = data.status || "idle";
-      const meta = STATUS_META[status] || STATUS_META.idle;
-      const progress = data.progress || 0;
-
-      // XP/Level from stats
-      const totalInput = stats.totalInputTokens || 0;
-      const totalOutput = stats.totalOutputTokens || 0;
-      const totalTokens = totalInput + totalOutput;
-      const xp = stats.xp || Math.floor(totalTokens / TOKENS_PER_XP);
-      const level = stats.level || getLevel(xp);
-      const xpInLvl = getXpInLevel(xp, level);
-      const xpNeeded = getXpForLevel(level);
-      const xpRatio = xpNeeded > 0 ? Math.min(xpInLvl / xpNeeded, 1) : 1;
-      const cost = calcCost(totalInput, totalOutput);
-      const sessions = stats.totalSessions || 0;
-
-      const card = document.createElement("div");
-      card.className = "agent-card";
-      card.dataset.agent = name;
-      card.style.setProperty("--agent-color", def.color);
-      card.innerHTML = `
-        <div class="card-header-row">
-          <div>
-            <div class="agent-name">${def.icon} ${def.label}</div>
-            <div class="agent-status ${meta.cls}">
-              <span style="width:6px;height:6px;border-radius:50%;background:${meta.dot};display:inline-block"></span>
-              ${meta.label}
-            </div>
-          </div>
-          <div class="card-level-badge">Lv.${level}</div>
-        </div>
-        <div class="card-xp-row">
-          <div class="card-xp-track">
-            <div class="card-xp-fill" style="width:${xpRatio * 100}%; background:${def.color}"></div>
-          </div>
-          <span class="card-xp-text">${xpInLvl}/${xpNeeded || "MAX"}</span>
-        </div>
-        <div class="agent-task">${data.task || "No task assigned"}</div>
-        ${progress > 0 ? `
-          <div class="agent-progress">
-            <div class="agent-progress-fill" style="width:${progress}%"></div>
-          </div>
-        ` : ""}
-        <div class="card-stats-row">
-          <span class="card-stat-item" title="Total tokens used">${fmtTokens(totalTokens)} tok</span>
-          <span class="card-stat-item" title="Sessions">${sessions} sess</span>
-          <span class="card-stat-item card-cost" title="Est. cost (Opus 4)">$${cost.toFixed(2)}</span>
-        </div>
-        <div class="agent-time">${timeAgo(data.updatedAt)}</div>
-      `;
-      grid.appendChild(card);
-    });
-  }
+  // renderCards removed — replaced by renderTeamList + renderDetail
 
   // ── Update Stats ──
   function updateStats() {
@@ -628,7 +584,7 @@
       }
     });
 
-    renderCards();
+    renderTeamList(); renderDetail();
     updateStats();
   });
 
@@ -639,12 +595,12 @@
       const name = change.doc.id;
       agentStats[name] = data;
     });
-    renderCards();
+    renderTeamList(); renderDetail();
     updatePokemonPanel();
   });
 
   // Initial render
-  renderCards();
+  renderTeamList(); renderDetail();
   updateStats();
   renderLog();
 

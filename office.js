@@ -41,12 +41,24 @@
 
   // ── Agent Definitions ──
   const AGENTS = {
-    "project-ops":    { label: "project-ops",    color: "#3b9eff", role: "Lead / Docs",     icon: "📋", x: 0 },
-    "studio-engine":  { label: "studio-engine",  color: "#fb923c", role: "Luau / Systems",   icon: "⚙️", x: 1 },
-    "world-content":  { label: "world-content",  color: "#22c55e", role: "Planets / NPCs",   icon: "🌍", x: 2 },
-    "ui-ux":          { label: "ui-ux",          color: "#a78bfa", role: "GUI / HUD",        icon: "🎨", x: 3 },
-    "qa-balance":     { label: "qa-balance",     color: "#22d3ee", role: "Testing / Balance", icon: "🔍", x: 4 },
+    "project-ops":    { label: "project-ops",    color: "#3b9eff", role: "Lead / Docs",     icon: "📋", x: 0, spritePng: "assets/sprites/geckarbor.png", spriteGif: "assets/sprites/geckarbor.gif", pokemon: "Geckarbor" },
+    "studio-engine":  { label: "studio-engine",  color: "#fb923c", role: "Luau / Systems",   icon: "⚙️", x: 1, spritePng: "assets/sprites/enton.png",     spriteGif: "assets/sprites/enton.gif",     pokemon: "Enton" },
+    "world-content":  { label: "world-content",  color: "#22c55e", role: "Planets / NPCs",   icon: "🌍", x: 2, spritePng: "assets/sprites/bidiza.png",    spriteGif: "assets/sprites/bidiza.gif",    pokemon: "Bidiza" },
+    "ui-ux":          { label: "ui-ux",          color: "#a78bfa", role: "GUI / HUD",        icon: "🎨", x: 3, spritePng: "assets/sprites/riolu.png",     spriteGif: "assets/sprites/riolu.gif",     pokemon: "Riolu" },
+    "qa-balance":     { label: "qa-balance",     color: "#22d3ee", role: "Testing / Balance", icon: "🔍", x: 4, spritePng: "assets/sprites/felino.png",   spriteGif: "assets/sprites/felino.gif",    pokemon: "Felino" },
   };
+
+  // ── Sprite DOM Elements ──
+  const spriteOverlay = document.getElementById("sprite-overlay");
+  const spriteElements = {};
+  Object.keys(AGENTS).forEach(name => {
+    const img = document.createElement("img");
+    img.src = AGENTS[name].spritePng;
+    img.alt = AGENTS[name].pokemon;
+    img.dataset.agent = name;
+    spriteOverlay.appendChild(img);
+    spriteElements[name] = img;
+  });
 
   const STATUS_META = {
     working:  { label: "WORKING",  dot: "#22c55e", cls: "status-working"  },
@@ -65,63 +77,6 @@
   const canvas = document.getElementById("office");
   const ctx = canvas.getContext("2d");
   const PX = 7;  // pixel scale
-
-  // Sprite: 8x12 pixel character (row-major, 0=transparent)
-  function drawSprite(sprite, ox, oy, color) {
-    for (let y = 0; y < sprite.length; y++) {
-      for (let x = 0; x < sprite[y].length; x++) {
-        if (sprite[y][x] === 0) continue;
-        ctx.fillStyle = sprite[y][x] === 1 ? color : sprite[y][x] === 2 ? "#fff" : "#222";
-        ctx.fillRect((ox + x) * PX, (oy + y) * PX, PX, PX);
-      }
-    }
-  }
-
-  // Character sprites
-  const CHAR_IDLE = [
-    [0,0,0,1,1,0,0,0],
-    [0,0,1,2,2,1,0,0],
-    [0,0,1,1,1,1,0,0],
-    [0,0,0,1,1,0,0,0],
-    [0,0,1,1,1,1,0,0],
-    [0,0,1,1,1,1,0,0],
-    [0,0,1,1,1,1,0,0],
-    [0,0,0,1,1,0,0,0],
-    [0,0,0,1,1,0,0,0],
-    [0,0,1,0,0,1,0,0],
-    [0,0,1,0,0,1,0,0],
-    [0,1,1,0,0,1,1,0],
-  ];
-
-  const CHAR_TYPING = [
-    [0,0,0,1,1,0,0,0],
-    [0,0,1,2,2,1,0,0],
-    [0,0,1,1,1,1,0,0],
-    [0,0,0,1,1,0,0,0],
-    [0,0,1,1,1,1,0,0],
-    [0,1,1,1,1,1,0,0],
-    [1,0,1,1,1,1,1,0],
-    [0,0,0,1,1,0,0,0],
-    [0,0,0,1,1,0,0,0],
-    [0,0,1,0,0,1,0,0],
-    [0,0,1,0,0,1,0,0],
-    [0,1,1,0,0,1,1,0],
-  ];
-
-  const CHAR_THINK = [
-    [0,0,0,1,1,0,0,0],
-    [0,0,1,2,2,1,0,0],
-    [0,0,1,1,1,1,0,0],
-    [0,0,0,1,1,0,0,0],
-    [0,1,1,1,1,1,0,0],
-    [0,1,1,1,1,0,0,0],
-    [0,0,1,1,1,1,0,0],
-    [0,0,0,1,1,0,0,0],
-    [0,0,0,1,1,0,0,0],
-    [0,0,1,0,0,1,0,0],
-    [0,0,1,0,0,1,0,0],
-    [0,1,1,0,0,1,1,0],
-  ];
 
   // Desk sprite (16x6)
   const DESK = [
@@ -262,14 +217,15 @@
     const totalW = canvas.width / PX;
     const margin = 12;
     const slotW = (totalW - margin * 2) / names.length;
-    const useTyping = Math.floor(frame / 20) % 2 === 0;
-
+    const canvasRect = canvas.getBoundingClientRect();
+    const scaleX = canvasRect.width / canvas.width;
+    const scaleY = canvasRect.height / canvas.height;
     names.forEach((name, i) => {
       const def = AGENTS[name];
       const data = agentData[name] || { status: "idle" };
       const status = data.status || "idle";
       const cx = Math.floor(margin + i * slotW + slotW / 2 - 4);
-      const deskY = 40;
+      const deskY = 52;
       const charY = deskY - 14;
 
       // Desk
@@ -285,30 +241,49 @@
         ctx.fillRect((cx - 2) * PX, (deskY - 9) * PX, 12 * PX, 12 * PX);
       }
 
-      // Character
-      let sprite = CHAR_IDLE;
-      if (status === "working") sprite = useTyping ? CHAR_TYPING : CHAR_IDLE;
-      else if (status === "thinking") sprite = CHAR_THINK;
-      drawSprite(sprite, cx, charY, def.color);
+      // Pokémon Sprite (DOM element, positioned over canvas)
+      const spriteEl = spriteElements[name];
+      if (spriteEl) {
+        const isActive = status === "working" || status === "thinking";
+        const wantedSrc = isActive ? def.spriteGif : def.spritePng;
+        if (!spriteEl.src.endsWith(wantedSrc)) spriteEl.src = wantedSrc;
 
-      // Status dot
+        // Use natural dimensions to preserve aspect ratio
+        const spriteScale = 5;
+        const natW = spriteEl.naturalWidth || 20;
+        const natH = spriteEl.naturalHeight || 20;
+        const sw = natW * spriteScale * scaleX;
+        const sh = natH * spriteScale * scaleY;
+        // Center horizontally on slot, sit on top of desk
+        const sx = (cx + 4) * PX * scaleX - sw / 2;
+        const deskTopPx = (deskY - 7) * PX * scaleY;  // top of monitor
+        const sy = deskTopPx - sh - 2 * scaleY;
+        // Add padding offset (6px from .office-canvas-wrap padding)
+        spriteEl.style.left = (sx + 6) + "px";
+        spriteEl.style.top = (sy + 6) + "px";
+        spriteEl.style.width = sw + "px";
+        spriteEl.style.height = sh + "px";
+        spriteEl.style.opacity = isActive ? "1" : "0.75";
+      }
+
+      // Status dot (above sprite area)
       const meta = STATUS_META[status] || STATUS_META.idle;
+      const dotY = deskY - 8 - 16;  // well above the desk/monitor
       ctx.fillStyle = meta.dot;
       ctx.beginPath();
-      ctx.arc((cx + 4) * PX, (charY - 2) * PX, 5, 0, Math.PI * 2);
+      ctx.arc((cx + 4) * PX, dotY * PX, 5, 0, Math.PI * 2);
       ctx.fill();
-      // Dot glow for active
       if (status === "working" || status === "thinking") {
         ctx.fillStyle = meta.dot.replace(")", ",0.3)").replace("rgb", "rgba");
-        ctx.beginPath(); ctx.arc((cx + 4) * PX, (charY - 2) * PX, 9, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc((cx + 4) * PX, dotY * PX, 9, 0, Math.PI * 2); ctx.fill();
       }
 
       // Thought bubble for working/thinking agents
       if (status === "working" && data.task) {
-        drawBubble(cx + 7, charY - 5, data.task);
+        drawBubble(cx + 7, dotY - 4, data.task);
       } else if (status === "thinking") {
         const dots = ".".repeat((Math.floor(frame / 15) % 3) + 1);
-        drawBubble(cx + 7, charY - 5, dots);
+        drawBubble(cx + 7, dotY - 4, dots);
       }
 
       // Name label

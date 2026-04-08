@@ -71,6 +71,34 @@ Diese Regeln gelten IMMER, ohne dass Hannes dich daran erinnern muss:
 - **Vor Arbeitsbeginn:** `node tools/tickets.mjs list --status backlog` um offene Tickets zu sehen
 - Tickets sind live sichtbar: https://xzhannes.github.io/planet-miner-hq/
 
+### Agent Office — Live Status (IMMER machen!)
+Bei JEDER Aufgabe den Agent-Status in Firebase updaten — Hannes sieht das live im Terminal-Monitor und auf der GitPage.
+
+- **Aufgabe starten:**
+  `node tools/agent-status.mjs update studio-engine --status working --task "PM-XXX" --desc "Kurzbeschreibung" --progress 0`
+- **Progress-Update** (bei größeren Aufgaben, z.B. nach Teilschritten):
+  `node tools/agent-status.mjs update studio-engine --progress 50 --desc "Neuer Stand"`
+- **Aufgabe fertig:**
+  `node tools/agent-status.mjs update studio-engine --status done --progress 100`
+- **Danach idle:**
+  `node tools/agent-status.mjs idle studio-engine`
+
+**Welcher Agent-Name?** Hängt von der Aufgabe ab:
+| Aufgabe | Agent-Name |
+|---------|-----------|
+| Luau-Code, Systeme, Fixes | `studio-engine` |
+| Docs, Tickets, Roadmap | `project-ops` |
+| Planeten, NPCs, Content | `world-content` |
+| GUI, HUD, Menüs | `ui-ux` |
+| Testing, Balancing | `qa-balance` |
+
+Bei Agent-Teams: Jeder Teammate updated seinen eigenen Status.
+
+**Monitor-Befehle für Hannes:**
+- Terminal: `node tools/agent-monitor.mjs` (separater Tab, läuft dauerhaft)
+- Web: https://xzhannes.github.io/planet-miner-hq/office.html
+- Status-Liste: `node tools/agent-status.mjs list`
+
 ### Git (autonom)
 - **Committen wenn sinnvoll:** Nach fertigem Feature, nach Fix, nach Doc-Update, nach logischem Arbeitsblock. Nicht nach jeder Einzelzeile, nicht erst am Ende der Session.
 - **Pushen wenn sinnvoll:** Nach jedem Commit der für andere sichtbar sein sollte. Insbesondere nach Ticket-relevanten Änderungen, damit Dashboard und Docs synchron sind.

@@ -89,125 +89,22 @@
     spriteElements[name] = img;
   });
 
-  // ── Hover Card (Pokemon-style info popup) ──
-  const hoverCard = document.createElement("div");
-  hoverCard.className = "pokemon-hover-card";
-  hoverCard.style.display = "none";
-  document.body.appendChild(hoverCard);
+  // ── Sprite ↔ Card linking (hover sprite highlights card) ──
+  let highlightedCard = null;
 
-  let hoverTimeout = null;
-
-  function showHoverCard(name, spriteEl) {
-    const def = AGENTS[name];
-    const stats = agentStats[name] || {};
-    const data = agentData[name] || {};
-    const status = data.status || "idle";
-    const meta = STATUS_META[status] || STATUS_META.idle;
-
-    const totalInput = stats.totalInputTokens || 0;
-    const totalOutput = stats.totalOutputTokens || 0;
-    const totalTokens = totalInput + totalOutput;
-    const xp = stats.xp || Math.floor(totalTokens / TOKENS_PER_XP);
-    const level = stats.level || getLevel(xp);
-    const xpInLvl = getXpInLevel(xp, level);
-    const xpNeeded = getXpForLevel(level);
-    const xpRatio = xpNeeded > 0 ? Math.min(xpInLvl / xpNeeded, 1) : 1;
-    const cost = calcCost(totalInput, totalOutput);
-    const sessions = stats.totalSessions || 0;
-
-    hoverCard.innerHTML = `
-      <div class="phc-header" style="--agent-color: ${def.color}">
-        <div class="phc-header-bg"></div>
-        <img class="phc-sprite" src="${def.spriteGif}" alt="${def.pokemon}">
-        <div class="phc-title">
-          <span class="phc-pokemon">${def.pokemon}</span>
-          <span class="phc-agent-id">${def.label}</span>
-        </div>
-        <div class="phc-level-badge">Lv.${level}</div>
-      </div>
-      <div class="phc-body">
-        <div class="phc-xp-section">
-          <div class="phc-xp-label">
-            <span>XP</span>
-            <span class="phc-xp-nums">${xpInLvl} / ${xpNeeded || "MAX"}</span>
-          </div>
-          <div class="phc-xp-track">
-            <div class="phc-xp-fill" style="width: ${xpRatio * 100}%; background: ${def.color}"></div>
-          </div>
-        </div>
-        <div class="phc-divider"></div>
-        <div class="phc-stats-grid">
-          <div class="phc-stat">
-            <span class="phc-stat-label">Type</span>
-            <span class="phc-stat-value phc-type-badge" style="background: ${def.color}22; color: ${def.color}; border: 1px solid ${def.color}44">${def.role}</span>
-          </div>
-          <div class="phc-stat">
-            <span class="phc-stat-label">Status</span>
-            <span class="phc-stat-value ${meta.cls}" style="font-size: 0.65rem">${meta.label}</span>
-          </div>
-          <div class="phc-stat">
-            <span class="phc-stat-label">Sessions</span>
-            <span class="phc-stat-value">${sessions}</span>
-          </div>
-          <div class="phc-stat">
-            <span class="phc-stat-label">Total Tokens</span>
-            <span class="phc-stat-value">${fmtTokens(totalTokens)}</span>
-          </div>
-          <div class="phc-stat">
-            <span class="phc-stat-label">Input</span>
-            <span class="phc-stat-value" style="color: var(--accent-cyan)">${fmtTokens(totalInput)}</span>
-          </div>
-          <div class="phc-stat">
-            <span class="phc-stat-label">Output</span>
-            <span class="phc-stat-value" style="color: var(--accent-purple)">${fmtTokens(totalOutput)}</span>
-          </div>
-        </div>
-        <div class="phc-divider"></div>
-        <div class="phc-cost">
-          <span class="phc-cost-label">Est. Cost (Opus 4)</span>
-          <span class="phc-cost-value">$${cost.toFixed(2)}</span>
-        </div>
-      </div>
-    `;
-
-    // Position card to the right of sprite
-    const rect = spriteEl.getBoundingClientRect();
-    const cardW = 300;
-    let left = rect.right + 12;
-    let top = rect.top + rect.height / 2 - 160; // roughly center vertically
-
-    // If no room on right, show on left
-    if (left + cardW > window.innerWidth - 10) {
-      left = rect.left - cardW - 12;
-    }
-    // Keep within viewport vertically
-    if (top < 10) top = 10;
-    if (top + 380 > window.innerHeight - 10) top = window.innerHeight - 390;
-
-    hoverCard.style.left = left + "px";
-    hoverCard.style.top = top + "px";
-    hoverCard.style.bottom = "auto";
-    hoverCard.style.display = "block";
-  }
-
-  function hideHoverCard() {
-    hoverCard.style.display = "none";
-  }
-
-  // Attach hover events to sprites
   Object.keys(AGENTS).forEach(name => {
     const el = spriteElements[name];
     el.addEventListener("mouseenter", () => {
-      clearTimeout(hoverTimeout);
-      showHoverCard(name, el);
+      const card = document.querySelector(`.agent-card[data-agent="${name}"]`);
+      if (card) {
+        if (highlightedCard) highlightedCard.classList.remove("card-highlighted");
+        card.classList.add("card-highlighted");
+        highlightedCard = card;
+      }
     });
     el.addEventListener("mouseleave", () => {
-      hoverTimeout = setTimeout(hideHoverCard, 200);
+      if (highlightedCard) { highlightedCard.classList.remove("card-highlighted"); highlightedCard = null; }
     });
-  });
-  hoverCard.addEventListener("mouseenter", () => clearTimeout(hoverTimeout));
-  hoverCard.addEventListener("mouseleave", () => {
-    hoverTimeout = setTimeout(hideHoverCard, 200);
   });
 
   const STATUS_META = {
@@ -481,27 +378,56 @@
     Object.keys(AGENTS).forEach(name => {
       const def = AGENTS[name];
       const data = agentData[name] || {};
+      const stats = agentStats[name] || {};
       const status = data.status || "idle";
       const meta = STATUS_META[status] || STATUS_META.idle;
       const progress = data.progress || 0;
 
+      // XP/Level from stats
+      const totalInput = stats.totalInputTokens || 0;
+      const totalOutput = stats.totalOutputTokens || 0;
+      const totalTokens = totalInput + totalOutput;
+      const xp = stats.xp || Math.floor(totalTokens / TOKENS_PER_XP);
+      const level = stats.level || getLevel(xp);
+      const xpInLvl = getXpInLevel(xp, level);
+      const xpNeeded = getXpForLevel(level);
+      const xpRatio = xpNeeded > 0 ? Math.min(xpInLvl / xpNeeded, 1) : 1;
+      const cost = calcCost(totalInput, totalOutput);
+      const sessions = stats.totalSessions || 0;
+
       const card = document.createElement("div");
       card.className = "agent-card";
+      card.dataset.agent = name;
       card.style.setProperty("--agent-color", def.color);
       card.innerHTML = `
-        <div class="agent-name">${def.icon} ${def.label}</div>
-        <div class="agent-status ${meta.cls}">
-          <span style="width:6px;height:6px;border-radius:50%;background:${meta.dot};display:inline-block"></span>
-          ${meta.label}
+        <div class="card-header-row">
+          <div>
+            <div class="agent-name">${def.icon} ${def.label}</div>
+            <div class="agent-status ${meta.cls}">
+              <span style="width:6px;height:6px;border-radius:50%;background:${meta.dot};display:inline-block"></span>
+              ${meta.label}
+            </div>
+          </div>
+          <div class="card-level-badge">Lv.${level}</div>
+        </div>
+        <div class="card-xp-row">
+          <div class="card-xp-track">
+            <div class="card-xp-fill" style="width:${xpRatio * 100}%; background:${def.color}"></div>
+          </div>
+          <span class="card-xp-text">${xpInLvl}/${xpNeeded || "MAX"}</span>
         </div>
         <div class="agent-task">${data.task || "No task assigned"}</div>
-        <div class="agent-desc">${data.description || def.role}</div>
         ${progress > 0 ? `
           <div class="agent-progress">
             <div class="agent-progress-fill" style="width:${progress}%"></div>
           </div>
         ` : ""}
-        <div class="agent-time">${data.file ? "📄 " + data.file + " · " : ""}${timeAgo(data.updatedAt)}</div>
+        <div class="card-stats-row">
+          <span class="card-stat-item" title="Total tokens used">${fmtTokens(totalTokens)} tok</span>
+          <span class="card-stat-item" title="Sessions">${sessions} sess</span>
+          <span class="card-stat-item card-cost" title="Est. cost (Opus 4)">$${cost.toFixed(2)}</span>
+        </div>
+        <div class="agent-time">${timeAgo(data.updatedAt)}</div>
       `;
       grid.appendChild(card);
     });

@@ -90,7 +90,7 @@
   });
 
   // ── Pokemon Team UI ──
-  let selectedAgent = null;
+  let selectedAgent = "project-ops";
 
   function renderTeamList() {
     const list = document.getElementById("team-list");
@@ -229,7 +229,7 @@
   function updatePokemonPanel() { renderDetail(); }
 
   function selectAgent(name) {
-    selectedAgent = selectedAgent === name ? null : name;
+    selectedAgent = name;
     renderTeamList();
     renderDetail();
   }

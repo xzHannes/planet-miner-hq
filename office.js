@@ -190,7 +190,7 @@
 
   // Floor pattern
   function drawFloor() {
-    const floorY = 42;
+    const floorY = 24;
     for (let x = 0; x < canvas.width / PX; x++) {
       for (let y = floorY; y < canvas.height / PX; y++) {
         if ((x + y) % 6 === 0) {
@@ -212,7 +212,7 @@
     ctx.fillRect(0, 0, W, H);
 
     // Wall
-    const wallH = 40;
+    const wallH = 24;
     ctx.fillStyle = "#111827";
     ctx.fillRect(0, 0, W, wallH * PX);
 
@@ -221,37 +221,38 @@
     ctx.fillRect(0, (wallH - 1) * PX, W, PX);
 
     // Window 1
-    const winW = 24; const winH = 16;
+    const winW = 20; const winH = 12;
     ctx.fillStyle = "#060a14";
-    ctx.fillRect(10 * PX, 5 * PX, winW * PX, winH * PX);
+    ctx.fillRect(10 * PX, 3 * PX, winW * PX, winH * PX);
     ctx.strokeStyle = "#2a3552"; ctx.lineWidth = 3;
-    ctx.strokeRect(10 * PX, 5 * PX, winW * PX, winH * PX);
-    for (let i = 0; i < 10; i++) {
+    ctx.strokeRect(10 * PX, 3 * PX, winW * PX, winH * PX);
+    for (let i = 0; i < 8; i++) {
       ctx.fillStyle = `rgba(255,255,255,${0.3 + Math.random() * 0.5})`;
-      ctx.fillRect((12 + Math.random() * 20) * PX, (7 + Math.random() * 12) * PX, PX * 0.6, PX * 0.6);
+      ctx.fillRect((12 + Math.random() * 16) * PX, (5 + Math.random() * 8) * PX, PX * 0.6, PX * 0.6);
     }
 
     // Planet in window 1
     const planetPulse = Math.sin(frame * 0.02) * 0.5 + 0.5;
     ctx.fillStyle = `rgba(59,158,255,${0.3 + planetPulse * 0.2})`;
-    ctx.beginPath(); ctx.arc(22 * PX, 13 * PX, 5 * PX, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(20 * PX, 9 * PX, 4 * PX, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = `rgba(167,139,250,${0.2 + planetPulse * 0.1})`;
-    ctx.beginPath(); ctx.arc(22 * PX, 13 * PX, 3 * PX, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(20 * PX, 9 * PX, 2.5 * PX, 0, Math.PI * 2); ctx.fill();
 
     // "MISSION CONTROL" on wall
     ctx.fillStyle = "#2a3f66";
-    ctx.font = "bold 18px 'Press Start 2P'";
+    ctx.font = "bold 16px 'Press Start 2P'";
     ctx.textAlign = "center";
-    ctx.fillText("MISSION CONTROL", W / 2, 20 * PX);
+    ctx.fillText("MISSION CONTROL", W / 2, 13 * PX);
     ctx.textAlign = "left";
 
     // Window 2
+    const canvasGridW = Math.floor(W / PX);
     ctx.fillStyle = "#060a14";
-    ctx.fillRect((200 - 10 - winW) * PX, 5 * PX, winW * PX, winH * PX);
-    ctx.strokeRect((200 - 10 - winW) * PX, 5 * PX, winW * PX, winH * PX);
-    for (let i = 0; i < 8; i++) {
+    ctx.fillRect((canvasGridW - 10 - winW) * PX, 3 * PX, winW * PX, winH * PX);
+    ctx.strokeRect((canvasGridW - 10 - winW) * PX, 3 * PX, winW * PX, winH * PX);
+    for (let i = 0; i < 6; i++) {
       ctx.fillStyle = `rgba(255,255,255,${0.3 + Math.random() * 0.5})`;
-      ctx.fillRect(((200 - 10 - winW + 2) + Math.random() * 20) * PX, (7 + Math.random() * 12) * PX, PX * 0.6, PX * 0.6);
+      ctx.fillRect(((canvasGridW - 10 - winW + 2) + Math.random() * 16) * PX, (5 + Math.random() * 8) * PX, PX * 0.6, PX * 0.6);
     }
 
     drawFloor();
@@ -268,7 +269,7 @@
       const data = agentData[name] || { status: "idle" };
       const status = data.status || "idle";
       const cx = Math.floor(margin + i * slotW + slotW / 2 - 4);
-      const deskY = 62;
+      const deskY = 40;
       const charY = deskY - 14;
 
       // Desk

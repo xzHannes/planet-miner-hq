@@ -13,6 +13,49 @@ Alle abgeschlossenen Features, Fixes und Änderungen.
 
 ## Changelog
 
+### 2026-04-09 — Nav Trail System, Damage Numbers, Loot Fly-In, Dashboard Polish
+
+**Nav-Button & Trail (PlanetGame_Main + OrePathClient):**
+- **Fix:** Forward-Reference Bugs (togglePlanetMenu, planetBtnData, wtStroke, worldToggle)
+- **Feature:** Persistentes Nav-Highlight: Gold-Border + Bouncing Arrow auf Ziel-Planet
+- **Feature:** Globe-Hint bei geschlossenem Menü (Arrow + Gold-Border auf Globe-Button)
+- **Feature:** Nav-State bleibt nach Teleport erhalten (restoreNavState)
+- **Feature:** Trail: Dynamische Dot-Anzahl (konstantes 3.5 Stud Spacing), smooth Seitwärtsbewegung
+- **Feature:** Trail: Rainbow-Glow Pulse Wave (Player→Ore, subtil, Galaxy-Style)
+- **Fix:** Trail: Dot-Pool (kein Flimmern), smoothed playerDir (Idle-Animation-Filter)
+- **Polish:** Idle-Pulse-Animationen von Nav + Globe Button entfernt
+- **Polish:** OrePathClient pulseGlobe deaktiviert (PlanetGame_Main übernimmt)
+
+**Damage Numbers (MiningClient + NotificationClient):**
+- **Feature:** DamagePop Server→Client Event verbunden — Damage Numbers wieder sichtbar
+- **Polish:** Weiß statt rot, 2 Dezimalen (string.format %.2f), größer (28px), Pop-Animation
+- **Fix:** Hit-Position am Ore-Rand (Richtung Spieler) statt Ore-Mitte
+
+**Loot Drop Popup (NotificationClient):**
+- **Feature:** Material-Pickup fliegt in Bezier-Bogen zum Avatar (Inventar) oder XP-Bar (Progress)
+- **Feature:** Bouncy Pop-in am Ore, Hold, Schwung-Arc mit zufälliger Kurve, Avatar-Bounce bei Landing
+- **Fix:** GuiInset-Kompensation für exakte Zielposition
+- **Fix:** Spread (±50px) um Ore für individuelle Flugbahnen
+
+**Ore UI (MiningServer):**
+- **Feature:** Respawn Timer als separates Label oberhalb Ore-Name (rot)
+- **Feature:** HP-Bar zeigt 0/x bei abgebautem Ore (bleibt sichtbar)
+- **Polish:** GUI höher positioniert (StudsOffset 6)
+- **Bug:** Respawn Timer Label wird nicht angezeigt — nächste Session fixen
+
+**Dashboard (office.js):**
+- **Feature:** Kompakte scrollende Text-Bubble über Agent-Sprites
+- **Feature:** Activity Log zeigt Task-Beschreibung statt Ticket-ID
+- **Fix:** Token-Anzeige nur bei DONE-Einträgen
+- **Fix:** Bubble Text vertikal zentriert
+- **Polish:** Task-Bar aus Detail-Panel entfernt
+
+**Infrastruktur:**
+- **Docs:** CLAUDE.md optimiert: 359→72 Zeilen (-80%), Referenzmaterial in docs/CLAUDE_REFERENCE.md
+- **Docs:** Live Dashboard Workflow in CLAUDE.md verankert
+- **Feature:** agent-status.mjs speichert lastTaskTokens für Dashboard
+- **Polish:** Memories aufgeräumt (10→8 Files, -57% Zeilen)
+
 ### 2026-04-09 — UI Cleanup & Navigation Redesign
 - **Feature:** Hub-Button in Planet-Teleport-Liste integriert (Cyan-Accent, Raketen-Emoji, über Lv.7)
 - **Feature:** Nav-Button (Kompass 🧭) rechts neben XP-Bar — toggelt Ore Trail oder öffnet Planet-Menü mit Highlight

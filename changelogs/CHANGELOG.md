@@ -13,6 +13,16 @@ Alle abgeschlossenen Features, Fixes und Änderungen.
 
 ## Changelog
 
+### 2026-04-09 — UI Cleanup & Navigation Redesign
+- **Feature:** Hub-Button in Planet-Teleport-Liste integriert (Cyan-Accent, Raketen-Emoji, über Lv.7)
+- **Feature:** Nav-Button (Kompass 🧭) rechts neben XP-Bar — toggelt Ore Trail oder öffnet Planet-Menü mit Highlight
+- **Fix:** "Go to Hub" Button aus Bildschirmmitte entfernt (war redundant mit Planet-Liste)
+- **Fix:** [G] Equip-Button versteckt (Profile über Avatar-Click erreichbar)
+- **Fix:** Crystal-Tracking oben mitte deaktiviert (doppelte Info, steht in XP-Bar)
+- **Fix:** TravelClient + PickaxeClient Overlap mit XP-Bar behoben
+- **Polish:** CosmicUI Viewport-Fix für Wine/Vinegar (ViewportSize starts at 1,1 statt 0,0)
+- **Docs:** UI/UX Masterplan "Cosmic Glass" — Cosmic Glass HudClient erstellt aber zurückgestellt (screen-by-screen Ansatz)
+
 ### 2026-04-04 — XP-basiertes Auto-Level-System
 - **Feature:** XP-basiertes Auto-Level-System — Spieler sammeln XP durch Mining, Level-Up automatisch (PM-004)
 - **Feature:** XP-Bar im HUD mit animiertem Fill und Shimmer-Effekt

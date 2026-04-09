@@ -213,7 +213,7 @@ Status: `backlog`, `in-progress`, `done` | Priority: `critical`, `high`, `medium
 - **Dev Dashboard:** https://xzhannes.github.io/planet-miner-hq/
 - **Repo:** https://github.com/xzHannes/planet-miner-hq
 
-## Aktueller Spielstand (Stand: 2026-04-08)
+## Aktueller Spielstand (Stand: 2026-04-09)
 
 ### Fertig implementiert — Core
 - Planeten-Lauf-Mechanik (kugelförmig, 360°, Mario Galaxy Prinzip)
@@ -228,15 +228,16 @@ Status: `backlog`, `in-progress`, `done` | Priority: `critical`, `high`, `medium
 - Balance-Config Modul (300+ Zeilen, zentral, 21 Level definiert)
 - PlaceConfig (Auto-Detection hub/stage/studio)
 
-### Fertig implementiert — UI/HUD (April 2-3)
-- HudClient: Komplettes HUD mit Level-Badge, XP-Bar, Coin-Counter, Planet-Anzeige
-- NotificationClient: Level-Up-Feier mit Gold-Partikeln
+### Fertig implementiert — UI/HUD (April 2-3, 9)
+- PlanetGame_Main: Avatar+PL-Badge, Planet-Labels, XP-Bar (Hyperrunners Design)
+- NotificationClient: Level-Up-Feier mit Gold-Partikeln (Cosmic Glass)
 - Ore Compass Trail: Neon-Kugeln auf Planetenoberfläche zum nächsten Level-Up-Erz
-- Quest Beacon: Klick auf HUD öffnet Planeten-Menü + highlightet Ziel-Planet
-- Wrong-Planet-Erkennung: Globe-Icon + pulsierender Button wenn falscher Planet
-- Hub-Button in Stages (immer sichtbar, ausgegraut mit "Unlock at Lv. 3" wenn locked)
-- Level-Up-Button zeigt Material-Progress (z.B. "Stone 3/5")
+- Nav-Button (🧭) rechts neben XP-Bar — toggelt Trail/Beacon (April 9)
+- Hub-Button (🚀) in Planet-Teleport-Liste integriert (April 9)
+- Crystal-Tracking oben deaktiviert (Info in XP-Bar) (April 9)
+- Level-Up-Button zeigt Material-Progress (z.B. "Crystal 0/35")
 - Schadenszahlen an Erzen, Sprint-Mechanik, Fredoka Font
+- CosmicUI Design-System deployed, HudClient Cosmic Glass DISABLED (screen-by-screen geplant)
 
 ### Fertig implementiert — Progression (April 4+)
 - XP-basiertes Auto-Level-System (XP durch Mining, automatisches Level-Up)
@@ -259,11 +260,12 @@ Status: `backlog`, `in-progress`, `done` | Priority: `critical`, `high`, `medium
 4. **Tinker the Upgrader** — Damage/Speed/Luck Upgrades
 
 ### Aktuell offen (Prio)
+- AutoMining Button Fix (PM-126) — funktioniert nicht nach MiningClient Cleanup
+- Nav-Button Pathing Trail Fix (PM-127) — Trail toggelt nicht bei Klick
+- Cosmic Glass UI Redesign (screen-by-screen, basierend auf Roblox Game Research)
 - PowerLevel-Border-Farbe unterschiedlich in Hub vs Stage1 (Bug)
 - NPC-System im Hub integrieren (PM-040 bis PM-048)
 - Sound FX Design (KI-generiert, PM-028)
-- Neues Default Pickaxe 3D-Modell (PM-023)
-- Divine Lightning Pickaxe (PM-022)
 
 ## Design-Philosophie
 - **Dopamin-Loop:** Schadenszahlen, Hitsounds, Swing-Sounds, schnelles Movement

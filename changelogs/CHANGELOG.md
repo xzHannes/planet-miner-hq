@@ -13,6 +13,27 @@ Alle abgeschlossenen Features, Fixes und Änderungen.
 
 ## Changelog
 
+### 2026-04-10 — Hub HUD Sync (Stage1 → Hub)
+
+**HUD UI Transfer (PlanetGame_Main, MiningClient, OrePathClient, TravelClient, PickaxeClient):**
+- **Feature:** NavButton (Kompass) im Hub sichtbar — Hub-Hide Block entfernt
+- **Feature:** Globe/WorldToggle (Planeten-Teleport) im Hub sichtbar + funktional
+- **Feature:** AutoMine Button im Hub sichtbar (togglebar, aber keine Mining-Funktion)
+- **Feature:** AutoMine Button auf Cosmic Glass Design aktualisiert (Emoji-Icon, schwarzer Stroke, Shine-Animation)
+- **Feature:** Planeten-Teleportliste über Globe-Button im Hub ausklappbar
+- **Fix:** planetLabel zeigt "Hub" statt "Teleporting to Sonnensystem2..." (updateAllUI Hub-Check + playerDataLoaded Guard)
+- **Fix:** "Go to Titan Forge" OrePathClient-Label im Hub versteckt (trackFrame.Visible = false)
+- **Remove:** "Return to Mining" TravelClient-Button entfernt (Teleports über Globe-Button)
+- **Remove:** EquipToggle Button (G-Badge) aus HUD entfernt (Hub + Stage1)
+- **Remove:** planetButtonFrame.Visible = false im Hub entfernt (Globe-Menu funktioniert jetzt)
+
+**Scripts geändert (beide Places synced):**
+- PlanetGame_Main — Hub-Hide entfernt, updateAllUI Hub-Check, playerDataLoaded kein travelToPlanet im Hub
+- MiningClient (Hub) — Early return durch isHubPlace Flag ersetzt, Cosmic Glass AutoMine Button
+- OrePathClient (Hub) — isHub Guard: trackFrame komplett versteckt
+- TravelClient — ReturnToMiningFrame entfernt
+- PickaxeClient — EquipToggle Button entfernt
+
 ### 2026-04-09 — Nav Trail System, Damage Numbers, Loot Fly-In, Dashboard Polish
 
 **Nav-Button & Trail (PlanetGame_Main + OrePathClient):**

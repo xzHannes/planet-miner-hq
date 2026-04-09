@@ -89,12 +89,17 @@ async function cmdUpdate(name, flags) {
   if (flags.file) data.file = flags.file;
   if (flags.progress !== undefined) data.progress = parseInt(flags.progress, 10);
 
+  // Store task tokens in agents doc for dashboard activity log
+  const inputTokens = parseInt(flags.input || "0", 10);
+  const outputTokens = parseInt(flags.output || "0", 10);
+  if (inputTokens > 0 || outputTokens > 0) {
+    data.lastTaskTokens = inputTokens + outputTokens;
+  }
+
   await setDoc(doc(agentsCol, name), data, { merge: true });
   console.log(`Agent ${name} updated: ${Object.keys(data).filter((k) => !["name", "updatedAt"].includes(k)).join(", ") || "timestamp"}`);
 
-  // Auto-track tokens if provided
-  const inputTokens = parseInt(flags.input || "0", 10);
-  const outputTokens = parseInt(flags.output || "0", 10);
+  // Auto-track tokens to stats/XP system
   if (inputTokens > 0 || outputTokens > 0) {
     await trackTokens(name, inputTokens, outputTokens);
   }

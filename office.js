@@ -209,7 +209,7 @@
           </div>
           ${nextLvlXp ? `<div class="det-xp-next">Next Lv. in ${nextLvlXp - xp} XP</div>` : ""}
         </div>
-        ${data.task ? `<div class="det-task-bar">${data.task}</div>` : ""}
+        <!-- task description shown in bubble + activity log only -->
       </div>
     `;
   }
@@ -293,13 +293,15 @@
     }
   }
 
-  // Thought bubble
+  // Thought bubble (compact, scrolling text)
+  const BUBBLE_MAX_W = 120;
   function drawBubble(ox, oy, text) {
-    const fontSize = 11;
+    const fontSize = 9;
     ctx.font = `${fontSize}px 'Press Start 2P'`;
-    const tw = ctx.measureText(text).width;
-    const bw = tw + 16;
-    const bh = fontSize + 10;
+    const fullTw = ctx.measureText(text).width;
+    const innerW = BUBBLE_MAX_W;
+    const bw = innerW + 12;
+    const bh = fontSize + 8;
     const bx = ox * PX;
     const by = oy * PX - 4;
     // Bubble body
@@ -313,9 +315,23 @@
     ctx.lineTo(bx + 4, by + bh + 6);
     ctx.lineTo(bx + 14, by + bh);
     ctx.fill();
-    // Text
+    // Text (scrolling if too wide)
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(bx + 6, by, innerW, bh);
+    ctx.clip();
     ctx.fillStyle = "#111";
-    ctx.fillText(text, bx + 8, by + fontSize + 3);
+    if (fullTw > innerW) {
+      const scrollSpeed = 30; // px per second
+      const gap = 40;
+      const totalW = fullTw + gap;
+      const offset = ((Date.now() / 1000) * scrollSpeed) % totalW;
+      ctx.fillText(text, bx + 6 - offset, by + fontSize + 2);
+      ctx.fillText(text, bx + 6 - offset + totalW, by + fontSize + 2);
+    } else {
+      ctx.fillText(text, bx + 6, by + fontSize + 2);
+    }
+    ctx.restore();
   }
 
   // Floor pattern
@@ -454,8 +470,8 @@
       }
 
       // Thought bubble for working/thinking agents
-      if (status === "working" && data.task) {
-        drawBubble(cx + 7, dotY - 4, data.task);
+      if (status === "working" && (data.description || data.task)) {
+        drawBubble(cx + 7, dotY - 4, data.description || data.task);
       } else if (status === "thinking") {
         const dots = ".".repeat((Math.floor(frame / 15) % 3) + 1);
         drawBubble(cx + 7, dotY - 4, dots);
@@ -512,11 +528,12 @@
   }
 
   // ── Activity Log ──
-  function addLogEntry(agent, msg) {
+  function addLogEntry(agent, msg, taskTokens) {
     activityLog.unshift({
       time: new Date(),
       agent: agent,
       msg: msg,
+      taskTokens: taskTokens || 0,
     });
     if (activityLog.length > 25) activityLog.length = 25;
     try { localStorage.setItem("agent-activity-log", JSON.stringify(activityLog)); } catch (_) {}
@@ -535,9 +552,9 @@
       const st = statusMatch ? statusMatch[1].toLowerCase() : "idle";
       const meta = STATUS_META[st] || STATUS_META.idle;
       const task = statusMatch ? e.msg.slice(statusMatch[1].length).trim() : e.msg;
-      // Token count from agent-stats (total at time of log)
-      const stats = agentStats[e.agent] || {};
-      const tok = (stats.totalInputTokens || 0) + (stats.totalOutputTokens || 0);
+      // Token count only for DONE entries
+      const isDone = st === "done";
+      const tok = isDone ? (e.taskTokens || 0) : 0;
       const tokTag = tok > 0 ? `<span class="log-tok">${fmtTokens(tok)}</span>` : "";
       return `<div class="log-entry">
         <span class="log-time">${e.time.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</span>
@@ -551,6 +568,7 @@
 
   // ── Firebase Real-Time Listener ──
   db.collection("agents").onSnapshot(snapshot => {
+    console.log("[Firebase] agents snapshot received:", snapshot.size, "docs");
     snapshot.docChanges().forEach(change => {
       const data = change.doc.data();
       const name = change.doc.id;
@@ -564,8 +582,10 @@
           if (data.status === "idle") { /* skip idle spam in log */ }
           else {
             const meta = STATUS_META[data.status] || STATUS_META.idle;
-            const taskInfo = data.task ? ` ${data.task}` : "";
-            addLogEntry(name, `${meta.label}${taskInfo}`);
+            // Show description (descriptive) instead of task ID
+            const desc = data.description || data.task || "";
+            const taskTok = (data.status === "done") ? (data.lastTaskTokens || 0) : 0;
+            addLogEntry(name, `${meta.label} ${desc}`, taskTok);
           }
         }
       }
@@ -573,10 +593,13 @@
 
     renderTeamList(); renderDetail();
     updateStats();
+  }, err => {
+    console.error("[Firebase] agents listener error:", err.message);
   });
 
   // ── Firebase: Agent Stats Listener ──
   db.collection("agent-stats").onSnapshot(snapshot => {
+    console.log("[Firebase] agent-stats snapshot received:", snapshot.size, "docs");
     snapshot.docChanges().forEach(change => {
       const data = change.doc.data();
       const name = change.doc.id;
@@ -584,6 +607,8 @@
     });
     renderTeamList(); renderDetail();
     updatePokemonPanel();
+  }, err => {
+    console.error("[Firebase] agent-stats listener error:", err.message);
   });
 
   // Initial render

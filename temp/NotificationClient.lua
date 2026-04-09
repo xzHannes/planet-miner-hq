@@ -1,8 +1,8 @@
 --[[
 	NotificationClient.lua
 	StarterPlayerScripts LocalScript
-	Production-ready notification/feedback system for Planet Miner
-	Bouncy, juicy, satisfying — inspired by Pet Simulator X / Blox Fruits style
+	Cosmic Glass notification/feedback system for Planet Miner
+	Uses CosmicUI design system for consistent styling and spring animations
 ]]
 
 local Players = game:GetService("Players")
@@ -10,22 +10,15 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local CosmicUI = require(script.Parent:WaitForChild("CosmicUI"))
+
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local camera = workspace.CurrentCamera
 
 -----------------------------------------------------------------------
--- PALETTE
+-- MATERIAL COLORS (21 materials)
 -----------------------------------------------------------------------
-local COLORS = {
-	panelBG    = Color3.fromRGB(12, 14, 30),
-	accent     = Color3.fromRGB(120, 90, 230),
-	gold       = Color3.fromRGB(255, 210, 50),
-	green      = Color3.fromRGB(80, 210, 130),
-	textPri    = Color3.fromRGB(240, 240, 255),
-	errorRed   = Color3.fromRGB(232, 80, 64),
-}
-
 local MAT_COLORS = {
 	Stone         = Color3.fromRGB(140, 140, 140),
 	Copper        = Color3.fromRGB(210, 120, 60),
@@ -51,117 +44,314 @@ local MAT_COLORS = {
 }
 
 -----------------------------------------------------------------------
--- SCREEN GUI
+-- SCREEN GUI + LAYERS
 -----------------------------------------------------------------------
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "NotificationGui"
-screenGui.ResetOnSpawn = false
-screenGui.DisplayOrder = 100
-screenGui.IgnoreGuiInset = true
-screenGui.Parent = playerGui
+local screenGui = CosmicUI.create("ScreenGui", {
+	Name = "NotificationGui",
+	ResetOnSpawn = false,
+	DisplayOrder = 100,
+	IgnoreGuiInset = true,
+	Parent = playerGui,
+})
 
--- Layers
-local coinLayer = Instance.new("Frame")
-coinLayer.Name = "CoinLayer"
-coinLayer.Size = UDim2.new(1, 0, 1, 0)
-coinLayer.BackgroundTransparency = 1
-coinLayer.Parent = screenGui
+local coinLayer = CosmicUI.create("Frame", {
+	Name = "CoinLayer",
+	Size = UDim2.new(1, 0, 1, 0),
+	BackgroundTransparency = 1,
+	Parent = screenGui,
+})
 
-local materialLayer = Instance.new("Frame")
-materialLayer.Name = "MaterialLayer"
-materialLayer.AnchorPoint = Vector2.new(1, 1)
-materialLayer.Position = UDim2.new(1, -20, 1, -120)
-materialLayer.Size = UDim2.new(0, 300, 0, 250)
-materialLayer.BackgroundTransparency = 1
-materialLayer.Parent = screenGui
+local materialLayer = CosmicUI.create("Frame", {
+	Name = "MaterialLayer",
+	AnchorPoint = Vector2.new(1, 1),
+	Position = UDim2.new(1, -20, 1, -120),
+	Size = UDim2.new(0, 300, 0, 280),
+	BackgroundTransparency = 1,
+	Parent = screenGui,
+})
 
-local toastLayer = Instance.new("Frame")
-toastLayer.Name = "ToastLayer"
-toastLayer.AnchorPoint = Vector2.new(0.5, 0)
-toastLayer.Position = UDim2.new(0.5, 0, 0, 20)
-toastLayer.Size = UDim2.new(0, 400, 0, 300)
-toastLayer.BackgroundTransparency = 1
-toastLayer.Parent = screenGui
+local toastLayer = CosmicUI.create("Frame", {
+	Name = "ToastLayer",
+	AnchorPoint = Vector2.new(0.5, 0),
+	Position = UDim2.new(0.5, 0, 0, 20),
+	Size = UDim2.new(0, 400, 0, 200),
+	BackgroundTransparency = 1,
+	Parent = screenGui,
+})
 
-local flashFrame = Instance.new("Frame")
-flashFrame.Name = "FlashFrame"
-flashFrame.Size = UDim2.new(1, 0, 1, 0)
-flashFrame.BackgroundColor3 = Color3.new(1, 1, 1)
-flashFrame.BackgroundTransparency = 1
-flashFrame.ZIndex = 50
-flashFrame.Parent = screenGui
+local levelUpLayer = CosmicUI.create("Frame", {
+	Name = "LevelUpLayer",
+	Size = UDim2.new(1, 0, 1, 0),
+	BackgroundTransparency = 1,
+	ZIndex = 40,
+	Parent = screenGui,
+})
 
-local levelUpLayer = Instance.new("Frame")
-levelUpLayer.Name = "LevelUpLayer"
-levelUpLayer.Size = UDim2.new(1, 0, 1, 0)
-levelUpLayer.BackgroundTransparency = 1
-levelUpLayer.ZIndex = 40
-levelUpLayer.Parent = screenGui
+local flashFrame = CosmicUI.create("Frame", {
+	Name = "FlashFrame",
+	Size = UDim2.new(1, 0, 1, 0),
+	BackgroundColor3 = Color3.new(1, 1, 1),
+	BackgroundTransparency = 1,
+	ZIndex = 50,
+	Parent = screenGui,
+})
+
+local damageLayer = CosmicUI.create("Frame", {
+	Name = "DamageLayer",
+	Size = UDim2.new(1, 0, 1, 0),
+	BackgroundTransparency = 1,
+	Parent = screenGui,
+})
 
 -----------------------------------------------------------------------
--- HELPERS
+-- CONSTANTS
 -----------------------------------------------------------------------
-local function tweenNew(obj, info, props)
-	local t = TweenService:Create(obj, info, props)
-	t:Play()
-	return t
-end
+local FONT_FREDOKA = Enum.Font.FredokaOne
+local MAX_MATERIAL_TOASTS = 5
+local MAX_INFO_TOASTS = 3
+local MATERIAL_DISMISS_TIME = 2.5
+local INFO_DISMISS_TIME = 3
+local RNG = Random.new()
 
-local function formatNumber(n)
-	if n >= 1000000 then
-		return string.format("%.1fM", n / 1000000)
-	elseif n >= 1000 then
-		return string.format("%.1fK", n / 1000)
+-----------------------------------------------------------------------
+-- 1. DAMAGE NUMBERS
+-----------------------------------------------------------------------
+local function showDamageNumber(screenPos: Vector2, amount: number, isCrit: boolean)
+	if not screenPos or not amount then return end
+
+	local fontSize = isCrit and CosmicUI.fontSize("Title") or CosmicUI.fontSize("Body")
+	local textColor = isCrit and CosmicUI.Colors.SolarGold or CosmicUI.Colors.SupernovaRed
+	local displayText = "-" .. tostring(math.floor(amount))
+
+	local xOffset = RNG:NextInteger(-10, 10)
+
+	local label = CosmicUI.create("TextLabel", {
+		Name = "DamageNumber",
+		Font = FONT_FREDOKA,
+		Text = displayText,
+		TextColor3 = textColor,
+		TextStrokeColor3 = CosmicUI.Colors.Void,
+		TextStrokeTransparency = 0.2,
+		TextSize = fontSize,
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0, screenPos.X + xOffset, 0, screenPos.Y),
+		Size = UDim2.new(0, 200, 0, 50),
+		Parent = damageLayer,
+	})
+
+	-- Crit label above damage number
+	local critLabel = nil
+	if isCrit then
+		critLabel = CosmicUI.create("TextLabel", {
+			Name = "CritLabel",
+			Font = FONT_FREDOKA,
+			Text = "CRIT!",
+			TextColor3 = CosmicUI.Colors.SolarGold,
+			TextStrokeColor3 = CosmicUI.Colors.Void,
+			TextStrokeTransparency = 0.2,
+			TextSize = math.floor(fontSize * 0.7),
+			BackgroundTransparency = 1,
+			AnchorPoint = Vector2.new(0.5, 1),
+			Position = UDim2.new(0.5, 0, 0, -4),
+			Size = UDim2.new(1, 0, 0, 30),
+			Parent = label,
+		})
 	end
-	return tostring(n)
-end
 
-local function makeCorner(parent, radius)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, radius or 8)
-	c.Parent = parent
-	return c
-end
+	-- Animate: float up 30px + scale 1.2 -> 0.8 + fade out over 0.6s
+	local startY = screenPos.Y
+	local elapsed = 0
+	local duration = 0.6
+	local startScale = 1.2
+	local endScale = 0.8
 
-local function makeStroke(parent, color, thickness)
-	local s = Instance.new("UIStroke")
-	s.Color = color or COLORS.accent
-	s.Thickness = thickness or 1.5
-	s.Transparency = 0.4
-	s.Parent = parent
-	return s
+	local connection
+	connection = RunService.Heartbeat:Connect(function(dt)
+		elapsed = elapsed + dt
+		local progress = math.min(elapsed / duration, 1)
+
+		-- Float up
+		local yOffset = progress * 30
+		label.Position = UDim2.new(0, screenPos.X + xOffset, 0, startY - yOffset)
+
+		-- Scale interpolation
+		local currentScale = startScale + (endScale - startScale) * progress
+		label.TextSize = math.floor(fontSize * currentScale)
+		if critLabel then
+			critLabel.TextSize = math.floor(fontSize * 0.7 * currentScale)
+		end
+
+		-- Fade out (accelerated in second half)
+		local fadeProgress = math.clamp((progress - 0.3) / 0.7, 0, 1)
+		label.TextTransparency = fadeProgress
+		label.TextStrokeTransparency = 0.2 + fadeProgress * 0.8
+		if critLabel then
+			critLabel.TextTransparency = fadeProgress
+			critLabel.TextStrokeTransparency = 0.2 + fadeProgress * 0.8
+		end
+
+		if progress >= 1 then
+			connection:Disconnect()
+			label:Destroy()
+		end
+	end)
 end
 
 -----------------------------------------------------------------------
--- EASING: Back-style bounce-in
+-- 2. MATERIAL PICKUP TOAST (Bottom-Right Stack with Duplicate Merge)
 -----------------------------------------------------------------------
-local BACK_TWEEN_IN = TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-local ELASTIC_TWEEN_IN = TweenInfo.new(0.55, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
-local FADE_OUT = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+local activeMaterialToasts = {} -- { frame, materialName, amount, label, dismissThread }
+
+local function repositionMaterialToasts()
+	for i, entry in ipairs(activeMaterialToasts) do
+		if entry.frame and entry.frame.Parent then
+			local indexFromBottom = #activeMaterialToasts - i
+			local targetY = -(indexFromBottom * 44)
+			CosmicUI.spring(entry.frame, {
+				Position = UDim2.new(0, 0, 1, targetY),
+			}, "Gentle")
+		end
+	end
+end
+
+local function removeMaterialToast(entry)
+	for i, v in ipairs(activeMaterialToasts) do
+		if v == entry then
+			table.remove(activeMaterialToasts, i)
+			break
+		end
+	end
+	if entry.frame and entry.frame.Parent then
+		CosmicUI.slideOut(entry.frame, "right", function()
+			entry.frame:Destroy()
+		end)
+	end
+	task.defer(repositionMaterialToasts)
+end
+
+local function showMaterialPickup(materialName: string, amount: number)
+	if not materialName or not amount or amount <= 0 then return end
+
+	local matColor = MAT_COLORS[materialName] or CosmicUI.Colors.PulsarWhite
+
+	-- Check for duplicate: merge into existing toast
+	for _, entry in ipairs(activeMaterialToasts) do
+		if entry.materialName == materialName and entry.frame and entry.frame.Parent then
+			entry.amount = entry.amount + amount
+			entry.label.Text = "+" .. tostring(entry.amount) .. " " .. materialName
+
+			-- Pulse via spring Snappy scale
+			local scale = entry.frame:FindFirstChildOfClass("UIScale")
+			if scale then
+				scale.Scale = 1.15
+				CosmicUI.spring(scale, { Scale = 1 }, "Snappy")
+			end
+
+			-- Reset dismiss timer
+			if entry.dismissThread then
+				task.cancel(entry.dismissThread)
+			end
+			entry.dismissThread = task.delay(MATERIAL_DISMISS_TIME, function()
+				removeMaterialToast(entry)
+			end)
+			return
+		end
+	end
+
+	-- Remove oldest if over max
+	while #activeMaterialToasts >= MAX_MATERIAL_TOASTS do
+		local oldest = activeMaterialToasts[1]
+		if oldest.dismissThread then
+			task.cancel(oldest.dismissThread)
+		end
+		table.remove(activeMaterialToasts, 1)
+		if oldest.frame and oldest.frame.Parent then
+			oldest.frame:Destroy()
+		end
+	end
+
+	-- Create new toast panel
+	local toast = CosmicUI.panel({
+		name = "MatToast",
+		size = UDim2.new(1, 0, 0, 38),
+		position = UDim2.new(1, 60, 1, 0), -- start offscreen right
+		anchorPoint = Vector2.new(1, 1),
+		strokeColor = matColor,
+		radius = CosmicUI.Radius.Small,
+		transparency = 0.12,
+		parent = materialLayer,
+	})
+
+	-- UIScale for pulse animation on merge
+	CosmicUI.create("UIScale", {
+		Scale = 1,
+		Parent = toast,
+	})
+
+	-- Color indicator bar (left side)
+	local bar = CosmicUI.create("Frame", {
+		Name = "ColorBar",
+		Size = UDim2.new(0, 4, 0.65, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 8, 0.5, 0),
+		BackgroundColor3 = matColor,
+		BorderSizePixel = 0,
+		Parent = toast,
+	})
+	CosmicUI.create("UICorner", {
+		CornerRadius = UDim.new(0, 2),
+		Parent = bar,
+	})
+
+	-- Text label
+	local label = CosmicUI.create("TextLabel", {
+		Name = "MatText",
+		Font = FONT_FREDOKA,
+		Text = "+" .. tostring(amount) .. " " .. materialName,
+		TextColor3 = matColor,
+		TextSize = CosmicUI.fontSize("Body"),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -24, 1, 0),
+		Position = UDim2.new(0, 20, 0, 0),
+		Parent = toast,
+	})
+
+	local entry = {
+		frame = toast,
+		materialName = materialName,
+		amount = amount,
+		label = label,
+		dismissThread = nil,
+	}
+
+	table.insert(activeMaterialToasts, entry)
+
+	-- Slide in from right with spring
+	CosmicUI.spring(toast, {
+		Position = UDim2.new(0, 0, 1, 0),
+	}, "Bouncy")
+
+	-- Reposition all toasts
+	task.defer(repositionMaterialToasts)
+
+	-- Auto dismiss
+	entry.dismissThread = task.delay(MATERIAL_DISMISS_TIME, function()
+		removeMaterialToast(entry)
+	end)
+end
 
 -----------------------------------------------------------------------
--- 1. COIN GAIN POPUP
+-- 3. COIN GAIN POPUP (Center Screen)
 -----------------------------------------------------------------------
 local activeCoinPopups = {}
 
-local function showCoinGain(amount)
+local function showCoinGain(amount: number)
 	if not amount or amount <= 0 then return end
 
 	local isBig = amount >= 1000
-	local fontSize = isBig and 36 or 26
-
-	local label = Instance.new("TextLabel")
-	label.Name = "CoinPopup"
-	label.Font = Enum.Font.FredokaOne
-	label.Text = "+" .. formatNumber(amount) .. " Coins"
-	label.TextColor3 = COLORS.gold
-	label.TextStrokeColor3 = Color3.fromRGB(80, 60, 0)
-	label.TextStrokeTransparency = 0.3
-	label.TextSize = fontSize
-	label.BackgroundTransparency = 1
-	label.AnchorPoint = Vector2.new(0.5, 0.5)
-	label.Size = UDim2.new(0, 350, 0, 50)
-	label.TextTransparency = 0
+	local fontSize = isBig and CosmicUI.fontSize("Title") or CosmicUI.fontSize("Body")
 
 	-- Stack offset
 	local stackY = 0
@@ -172,39 +362,73 @@ local function showCoinGain(amount)
 	end
 
 	local startY = 0.45 - (stackY / 1000)
-	label.Position = UDim2.new(0.5, 0, startY, 0)
-	label.Parent = coinLayer
 
-	-- Scale bounce in
-	label.Size = UDim2.new(0, 0, 0, 0)
-	tweenNew(label, BACK_TWEEN_IN, {
+	local label = CosmicUI.create("TextLabel", {
+		Name = "CoinPopup",
+		Font = FONT_FREDOKA,
+		Text = "+" .. CosmicUI.formatNumber(amount) .. " Coins",
+		TextColor3 = CosmicUI.Colors.SolarGold,
+		TextStrokeColor3 = Color3.fromRGB(80, 60, 0),
+		TextStrokeTransparency = 0.3,
+		TextSize = fontSize,
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, startY, 0),
 		Size = UDim2.new(0, 350, 0, 50),
+		TextTransparency = 0,
+		Parent = coinLayer,
 	})
 
-	-- Glow for big amounts
-	if isBig then
-		local glow = Instance.new("UIStroke")
-		glow.Color = COLORS.gold
-		glow.Thickness = 3
-		glow.Transparency = 0.2
-		glow.Parent = label
+	-- Spring Snappy pop-in via UIScale
+	local uiScale = CosmicUI.create("UIScale", {
+		Scale = 0,
+		Parent = label,
+	})
+	CosmicUI.spring(uiScale, { Scale = 1 }, "Snappy")
 
-		tweenNew(glow, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 2, true), {
-			Thickness = 6,
-			Transparency = 0.6,
-		})
+	-- Gold glow particles for big amounts
+	if isBig then
+		local particleCount = RNG:NextInteger(5, 8)
+		for i = 1, particleCount do
+			local particle = CosmicUI.create("Frame", {
+				Name = "GlowParticle",
+				Size = UDim2.new(0, RNG:NextInteger(4, 8), 0, RNG:NextInteger(4, 8)),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.new(0.5, 0, 0.5, 0),
+				BackgroundColor3 = CosmicUI.Colors.SolarGold,
+				BackgroundTransparency = 0.3,
+				Parent = label,
+			})
+			CosmicUI.create("UICorner", {
+				CornerRadius = UDim.new(0.5, 0),
+				Parent = particle,
+			})
+
+			local angle = RNG:NextNumber(0, math.pi * 2)
+			local dist = RNG:NextInteger(40, 100)
+			local targetX = 0.5 + math.cos(angle) * dist / 350
+			local targetY = 0.5 + math.sin(angle) * dist / 50
+			local dur = RNG:NextNumber(0.5, 0.9)
+
+			TweenService:Create(particle, TweenInfo.new(dur, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Position = UDim2.new(targetX, 0, targetY, 0),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(0, 2, 0, 2),
+			}):Play()
+		end
 	end
 
 	table.insert(activeCoinPopups, label)
 
-	-- Float up and fade
-	task.delay(0.5, function()
+	-- Float up 80px + fade over 1.2s (after initial pop)
+	task.delay(0.2, function()
 		local fadeInfo = TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		tweenNew(label, fadeInfo, {
+		TweenService:Create(label, fadeInfo, {
 			Position = UDim2.new(0.5, 0, startY - 0.08, 0),
 			TextTransparency = 1,
 			TextStrokeTransparency = 1,
-		})
+		}):Play()
+
 		task.delay(1.3, function()
 			for i, v in ipairs(activeCoinPopups) do
 				if v == label then
@@ -218,299 +442,294 @@ local function showCoinGain(amount)
 end
 
 -----------------------------------------------------------------------
--- 2. MATERIAL PICKUP INDICATOR
+-- 4. LEVEL-UP CELEBRATION (3-second signature moment)
 -----------------------------------------------------------------------
-local activeMaterialToasts = {}
-local MAX_MATERIAL_TOASTS = 5
-
-local function showMaterialPickup(materialName, amount)
-	if not materialName or not amount or amount <= 0 then return end
-
-	local matColor = MAT_COLORS[materialName] or COLORS.textPri
-
-	-- Container
-	local toast = Instance.new("Frame")
-	toast.Name = "MatToast"
-	toast.Size = UDim2.new(1, 0, 0, 36)
-	toast.BackgroundColor3 = COLORS.panelBG
-	toast.BackgroundTransparency = 0.15
-	toast.AnchorPoint = Vector2.new(1, 1)
-	toast.Position = UDim2.new(1, 60, 1, 0) -- start offscreen right
-	toast.ClipsDescendants = false
-	makeCorner(toast, 6)
-	makeStroke(toast, matColor, 1.5)
-
-	-- Color indicator bar
-	local bar = Instance.new("Frame")
-	bar.Size = UDim2.new(0, 4, 0.7, 0)
-	bar.AnchorPoint = Vector2.new(0, 0.5)
-	bar.Position = UDim2.new(0, 8, 0.5, 0)
-	bar.BackgroundColor3 = matColor
-	bar.BorderSizePixel = 0
-	bar.Parent = toast
-	makeCorner(bar, 2)
-
-	-- Text
-	local label = Instance.new("TextLabel")
-	label.Font = Enum.Font.FredokaOne
-	label.Text = "+" .. tostring(amount) .. " " .. materialName
-	label.TextColor3 = matColor
-	label.TextSize = 18
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.BackgroundTransparency = 1
-	label.Size = UDim2.new(1, -24, 1, 0)
-	label.Position = UDim2.new(0, 20, 0, 0)
-	label.Parent = toast
-
-	-- Remove oldest if over max
-	while #activeMaterialToasts >= MAX_MATERIAL_TOASTS do
-		local oldest = table.remove(activeMaterialToasts, 1)
-		if oldest and oldest.Parent then
-			oldest:Destroy()
-		end
-	end
-
-	-- Push existing toasts up
-	for i, existing in ipairs(activeMaterialToasts) do
-		if existing and existing.Parent then
-			local targetY = 1 - (#activeMaterialToasts - i + 1) * 42
-			tweenNew(existing, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-				Position = UDim2.new(0, 0, 0, targetY),
-			})
-		end
-	end
-
-	-- Place new toast at bottom
-	toast.Position = UDim2.new(1, 60, 1, 0)
-	toast.Parent = materialLayer
-	table.insert(activeMaterialToasts, toast)
-
-	-- Slide in from right
-	tweenNew(toast, BACK_TWEEN_IN, {
-		Position = UDim2.new(0, 0, 1, 0),
-	})
-
-	-- Auto dismiss
-	task.delay(2.5, function()
-		local slideOut = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		tweenNew(toast, slideOut, {
-			Position = UDim2.new(1, 60, 1, 0),
-		})
-		task.delay(0.4, function()
-			for i, v in ipairs(activeMaterialToasts) do
-				if v == toast then
-					table.remove(activeMaterialToasts, i)
-					break
-				end
-			end
-			toast:Destroy()
-		end)
-	end)
-end
-
------------------------------------------------------------------------
--- 3. LEVEL UP CELEBRATION
------------------------------------------------------------------------
-local function showLevelUp(newLevel)
+local function showLevelUp(newLevel: number, unlockInfo: string?)
 	if not newLevel then return end
 
-	-- Flash
-	screenFlash(COLORS.gold, 0.3)
+	-- 0.00s — Screen flash
+	screenFlash(CosmicUI.Colors.SolarGold, 0.15)
 
-	-- TODO: Play level-up sound here
-	-- print("[NotificationClient] SOUND TRIGGER: LevelUp")
-
-	-- Container
-	local container = Instance.new("Frame")
-	container.Name = "LevelUpCelebration"
-	container.Size = UDim2.new(1, 0, 1, 0)
-	container.BackgroundTransparency = 1
-	container.ZIndex = 41
-	container.Parent = levelUpLayer
-
-	-- Dim overlay
-	local overlay = Instance.new("Frame")
-	overlay.Size = UDim2.new(1, 0, 1, 0)
-	overlay.BackgroundColor3 = Color3.new(0, 0, 0)
-	overlay.BackgroundTransparency = 1
-	overlay.ZIndex = 41
-	overlay.Parent = container
-
-	tweenNew(overlay, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-		BackgroundTransparency = 0.6,
-	})
-
-	-- "LEVEL UP!" text
-	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Font = Enum.Font.FredokaOne
-	titleLabel.Text = "LEVEL UP!"
-	titleLabel.TextColor3 = COLORS.gold
-	titleLabel.TextStrokeColor3 = Color3.fromRGB(100, 70, 0)
-	titleLabel.TextStrokeTransparency = 0.1
-	titleLabel.TextSize = 72
-	titleLabel.BackgroundTransparency = 1
-	titleLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-	titleLabel.Position = UDim2.new(0.5, 0, 0.4, 0)
-	titleLabel.Size = UDim2.new(0, 500, 0, 90)
-	titleLabel.ZIndex = 42
-	titleLabel.Parent = container
-
-	-- Scale bounce
-	titleLabel.TextTransparency = 1
-	titleLabel.TextStrokeTransparency = 1
-	local titleScale = Instance.new("UIScale")
-	titleScale.Scale = 0
-	titleScale.Parent = titleLabel
-
-	tweenNew(titleScale, ELASTIC_TWEEN_IN, { Scale = 1 })
-	tweenNew(titleLabel, TweenInfo.new(0.25), {
-		TextTransparency = 0,
-		TextStrokeTransparency = 0.1,
-	})
-
-	-- Level number
-	local levelLabel = Instance.new("TextLabel")
-	levelLabel.Font = Enum.Font.FredokaOne
-	levelLabel.Text = "Level " .. tostring(newLevel)
-	levelLabel.TextColor3 = COLORS.textPri
-	levelLabel.TextStrokeColor3 = COLORS.accent
-	levelLabel.TextStrokeTransparency = 0.4
-	levelLabel.TextSize = 36
-	levelLabel.BackgroundTransparency = 1
-	levelLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-	levelLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
-	levelLabel.Size = UDim2.new(0, 300, 0, 50)
-	levelLabel.ZIndex = 42
-	levelLabel.TextTransparency = 1
-	levelLabel.Parent = container
-
-	task.delay(0.3, function()
-		tweenNew(levelLabel, BACK_TWEEN_IN, {
-			TextTransparency = 0,
-			TextStrokeTransparency = 0.4,
-		})
+	-- 0.05s — Screen shake
+	task.delay(0.05, function()
+		screenShake(5, 0.3)
 	end)
 
-	-- Gold particles (simulated with small frames)
-	local particleCount = 20
-	local rng = Random.new()
-	for i = 1, particleCount do
-		local particle = Instance.new("Frame")
-		particle.Size = UDim2.new(0, rng:NextInteger(4, 10), 0, rng:NextInteger(4, 10))
-		particle.AnchorPoint = Vector2.new(0.5, 0.5)
-		particle.Position = UDim2.new(0.5, 0, 0.45, 0)
-		particle.BackgroundColor3 = Color3.fromRGB(
-			rng:NextInteger(200, 255),
-			rng:NextInteger(170, 230),
-			rng:NextInteger(20, 80)
+	-- Container
+	local container = CosmicUI.create("Frame", {
+		Name = "LevelUpCelebration",
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		ZIndex = 41,
+		Parent = levelUpLayer,
+	})
+
+	-- 0.10s — Background dim
+	local overlay = CosmicUI.create("Frame", {
+		Name = "DimOverlay",
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 1,
+		ZIndex = 41,
+		Parent = container,
+	})
+
+	task.delay(0.10, function()
+		TweenService:Create(overlay, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+			BackgroundTransparency = 0.3,
+		}):Play()
+	end)
+
+	-- 0.15s — "LEVEL UP!" text with spring Elastic
+	local titleLabel = CosmicUI.create("TextLabel", {
+		Name = "LevelUpTitle",
+		Font = FONT_FREDOKA,
+		Text = "LEVEL UP!",
+		TextColor3 = CosmicUI.Colors.SolarGold,
+		TextStrokeColor3 = Color3.fromRGB(100, 70, 0),
+		TextStrokeTransparency = 0.1,
+		TextSize = CosmicUI.fontSize("Hero"),
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.4, 0),
+		Size = UDim2.new(0, 500, 0, 90),
+		ZIndex = 42,
+		TextTransparency = 0,
+		Parent = container,
+	})
+
+	-- Animated gradient on title (Gold -> White -> Gold, looping)
+	local titleGradient = CosmicUI.create("UIGradient", {
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, CosmicUI.Colors.SolarGold),
+			ColorSequenceKeypoint.new(0.5, CosmicUI.Colors.PulsarWhite),
+			ColorSequenceKeypoint.new(1, CosmicUI.Colors.SolarGold),
+		}),
+		Offset = Vector2.new(-1, 0),
+		Parent = titleLabel,
+	})
+
+	-- UIScale for spring animation
+	local titleScale = CosmicUI.create("UIScale", {
+		Scale = 0,
+		Parent = titleLabel,
+	})
+
+	task.delay(0.15, function()
+		CosmicUI.spring(titleScale, { Scale = 1 }, "Elastic")
+
+		-- Loop the gradient shimmer
+		local gradientTween = TweenService:Create(titleGradient,
+			TweenInfo.new(1.5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1),
+			{ Offset = Vector2.new(1, 0) }
 		)
-		particle.Rotation = rng:NextNumber(0, 360)
-		particle.ZIndex = 42
-		particle.Parent = container
-		makeCorner(particle, 3)
+		gradientTween:Play()
 
-		local angle = rng:NextNumber(0, math.pi * 2)
-		local dist = rng:NextNumber(150, 400)
-		local targetX = 0.5 + math.cos(angle) * dist / 1000
-		local targetY = 0.45 + math.sin(angle) * dist / 1000
+		-- Store for cleanup
+		task.delay(2.8, function()
+			gradientTween:Cancel()
+		end)
+	end)
 
-		local dur = rng:NextNumber(0.6, 1.2)
-		tweenNew(particle, TweenInfo.new(dur, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Position = UDim2.new(targetX, 0, targetY, 0),
-			BackgroundTransparency = 1,
-			Rotation = rng:NextNumber(-180, 180),
-		})
+	-- 0.30s — Level number bounces in
+	local levelLabel = CosmicUI.create("TextLabel", {
+		Name = "LevelNumber",
+		Font = FONT_FREDOKA,
+		Text = "Level " .. tostring(newLevel),
+		TextColor3 = CosmicUI.Colors.PulsarWhite,
+		TextStrokeColor3 = CosmicUI.Colors.Stardust,
+		TextStrokeTransparency = 0.4,
+		TextSize = CosmicUI.fontSize("Title"),
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		Size = UDim2.new(0, 300, 0, 50),
+		ZIndex = 42,
+		Parent = container,
+	})
+
+	local levelScale = CosmicUI.create("UIScale", {
+		Scale = 0,
+		Parent = levelLabel,
+	})
+
+	task.delay(0.30, function()
+		CosmicUI.spring(levelScale, { Scale = 1 }, "Bouncy")
+	end)
+
+	-- 0.40s — Star particles burst outward
+	task.delay(0.40, function()
+		local particleColors = {
+			CosmicUI.Colors.SolarGold,
+			CosmicUI.Colors.PulsarWhite,
+			CosmicUI.Colors.CosmicBlue,
+		}
+		local particleCount = RNG:NextInteger(20, 30)
+
+		for i = 1, particleCount do
+			local size = RNG:NextInteger(4, 12)
+			local particle = CosmicUI.create("Frame", {
+				Name = "StarParticle",
+				Size = UDim2.new(0, size, 0, size),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.new(0.5, 0, 0.45, 0),
+				BackgroundColor3 = particleColors[RNG:NextInteger(1, #particleColors)],
+				Rotation = RNG:NextNumber(0, 360),
+				ZIndex = 42,
+				Parent = container,
+			})
+			CosmicUI.create("UICorner", {
+				CornerRadius = UDim.new(0, 3),
+				Parent = particle,
+			})
+
+			local angle = RNG:NextNumber(0, math.pi * 2)
+			local dist = RNG:NextNumber(150, 400)
+			local targetX = 0.5 + math.cos(angle) * dist / 1000
+			local targetY = 0.45 + math.sin(angle) * dist / 1000
+			local dur = RNG:NextNumber(0.8, 1.5)
+
+			TweenService:Create(particle, TweenInfo.new(dur, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Position = UDim2.new(targetX, 0, targetY, 0),
+				BackgroundTransparency = 1,
+				Rotation = RNG:NextNumber(-180, 180),
+				Size = UDim2.new(0, 2, 0, 2),
+			}):Play()
+		end
+	end)
+
+	-- 0.50s — Unlock preview (optional)
+	if unlockInfo and unlockInfo ~= "" then
+		task.delay(0.50, function()
+			local unlockLabel = CosmicUI.create("TextLabel", {
+				Name = "UnlockPreview",
+				Font = FONT_FREDOKA,
+				Text = unlockInfo,
+				TextColor3 = CosmicUI.Colors.PlasmaGreen,
+				TextStrokeColor3 = CosmicUI.Colors.Void,
+				TextStrokeTransparency = 0.3,
+				TextSize = CosmicUI.fontSize("Body"),
+				BackgroundTransparency = 1,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.new(0.5, 0, 0.58, 0),
+				Size = UDim2.new(0, 400, 0, 40),
+				ZIndex = 42,
+				Parent = container,
+			})
+
+			local unlockScale = CosmicUI.create("UIScale", {
+				Scale = 0,
+				Parent = unlockLabel,
+			})
+			CosmicUI.spring(unlockScale, { Scale = 1 }, "Gentle")
+		end)
 	end
 
-	-- Dismiss after 2.5s
-	task.delay(2.5, function()
+	-- 2.50s — Fade everything out
+	task.delay(2.50, function()
 		local fadeInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		tweenNew(overlay, fadeInfo, { BackgroundTransparency = 1 })
-		tweenNew(titleLabel, fadeInfo, { TextTransparency = 1, TextStrokeTransparency = 1 })
-		tweenNew(levelLabel, fadeInfo, { TextTransparency = 1, TextStrokeTransparency = 1 })
+		TweenService:Create(overlay, fadeInfo, { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(titleLabel, fadeInfo, { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+		TweenService:Create(levelLabel, fadeInfo, { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
 
-		task.delay(0.6, function()
+		-- 3.00s — Cleanup
+		task.delay(0.5, function()
 			container:Destroy()
 		end)
 	end)
 end
 
 -----------------------------------------------------------------------
--- 4. ACHIEVEMENT / INFO TOAST
+-- 5. INFO TOAST (Top-Center)
 -----------------------------------------------------------------------
 local activeToasts = {}
 
-local function showToast(text, color)
+local function showToast(text: string, color: Color3?)
 	if not text then return end
-	color = color or COLORS.accent
+	color = color or CosmicUI.Colors.CosmicBlue
 
-	local toast = Instance.new("Frame")
-	toast.Name = "InfoToast"
-	toast.Size = UDim2.new(1, 0, 0, 44)
-	toast.BackgroundColor3 = COLORS.panelBG
-	toast.BackgroundTransparency = 0.08
-	toast.AnchorPoint = Vector2.new(0.5, 0)
-	toast.Position = UDim2.new(0.5, 0, 0, -50) -- start above screen
-	toast.ClipsDescendants = false
-	makeCorner(toast, 10)
-	makeStroke(toast, color, 1.5)
+	-- Limit to max 3
+	while #activeToasts >= MAX_INFO_TOASTS do
+		local oldest = table.remove(activeToasts, 1)
+		if oldest and oldest.Parent then
+			oldest:Destroy()
+		end
+	end
 
-	-- Icon circle
-	local icon = Instance.new("Frame")
-	icon.Size = UDim2.new(0, 22, 0, 22)
-	icon.AnchorPoint = Vector2.new(0, 0.5)
-	icon.Position = UDim2.new(0, 12, 0.5, 0)
-	icon.BackgroundColor3 = color
-	icon.Parent = toast
-	makeCorner(icon, 11)
+	local toast = CosmicUI.pill({
+		name = "InfoToast",
+		size = UDim2.new(1, 0, 0, 44),
+		position = UDim2.new(0.5, 0, 0, -50), -- start above screen
+		anchorPoint = Vector2.new(0.5, 0),
+		color = CosmicUI.Colors.DeepSpace,
+		transparency = 0.08,
+		strokeColor = color,
+		parent = toastLayer,
+	})
+
+	-- Icon circle (left, color-coded)
+	local icon = CosmicUI.create("Frame", {
+		Name = "Icon",
+		Size = UDim2.new(0, 22, 0, 22),
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 12, 0.5, 0),
+		BackgroundColor3 = color,
+		Parent = toast,
+	})
+	CosmicUI.create("UICorner", {
+		CornerRadius = UDim.new(0.5, 0),
+		Parent = icon,
+	})
 
 	-- Inner dot
-	local dot = Instance.new("Frame")
-	dot.Size = UDim2.new(0, 8, 0, 8)
-	dot.AnchorPoint = Vector2.new(0.5, 0.5)
-	dot.Position = UDim2.new(0.5, 0, 0.5, 0)
-	dot.BackgroundColor3 = COLORS.textPri
-	dot.Parent = icon
-	makeCorner(dot, 4)
+	local dot = CosmicUI.create("Frame", {
+		Name = "Dot",
+		Size = UDim2.new(0, 8, 0, 8),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		BackgroundColor3 = CosmicUI.Colors.PulsarWhite,
+		Parent = icon,
+	})
+	CosmicUI.create("UICorner", {
+		CornerRadius = UDim.new(0.5, 0),
+		Parent = dot,
+	})
 
 	-- Text
-	local label = Instance.new("TextLabel")
-	label.Font = Enum.Font.FredokaOne
-	label.Text = text
-	label.TextColor3 = COLORS.textPri
-	label.TextSize = 18
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.BackgroundTransparency = 1
-	label.Size = UDim2.new(1, -50, 1, 0)
-	label.Position = UDim2.new(0, 42, 0, 0)
-	label.TextTruncate = Enum.TextTruncate.AtEnd
-	label.Parent = toast
+	CosmicUI.create("TextLabel", {
+		Name = "ToastText",
+		Font = FONT_FREDOKA,
+		Text = text,
+		TextColor3 = CosmicUI.Colors.PulsarWhite,
+		TextSize = CosmicUI.fontSize("Body"),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -50, 1, 0),
+		Position = UDim2.new(0, 42, 0, 0),
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		Parent = toast,
+	})
 
 	-- Push existing toasts down
 	for i, existing in ipairs(activeToasts) do
 		if existing and existing.Parent then
 			local targetY = (#activeToasts - i + 1) * 52
-			tweenNew(existing, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			CosmicUI.spring(existing, {
 				Position = UDim2.new(0.5, 0, 0, targetY),
-			})
+			}, "Gentle")
 		end
 	end
 
-	toast.Parent = toastLayer
 	table.insert(activeToasts, toast)
 
-	-- Slide in with bounce
-	tweenNew(toast, BACK_TWEEN_IN, {
+	-- Slide in from top with spring Gentle
+	CosmicUI.spring(toast, {
 		Position = UDim2.new(0.5, 0, 0, 0),
-	})
+	}, "Gentle")
 
 	-- Auto dismiss
-	task.delay(3, function()
-		local slideOut = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		tweenNew(toast, slideOut, {
-			Position = UDim2.new(0.5, 0, 0, -50),
-		})
-		task.delay(0.4, function()
+	task.delay(INFO_DISMISS_TIME, function()
+		CosmicUI.slideOut(toast, "up", function()
 			for i, v in ipairs(activeToasts) do
 				if v == toast then
 					table.remove(activeToasts, i)
@@ -523,31 +742,30 @@ local function showToast(text, color)
 end
 
 -----------------------------------------------------------------------
--- 5. SCREEN EFFECTS
+-- 6. SCREEN EFFECTS
 -----------------------------------------------------------------------
-function screenFlash(color, duration)
+function screenFlash(color: Color3?, duration: number?)
 	color = color or Color3.new(1, 1, 1)
 	duration = duration or 0.25
 
 	flashFrame.BackgroundColor3 = color
 	flashFrame.BackgroundTransparency = 0.4
 
-	tweenNew(flashFrame, TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+	TweenService:Create(flashFrame, TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 		BackgroundTransparency = 1,
-	})
+	}):Play()
 end
 
 local shaking = false
 local shakeOffset = CFrame.new()
 
-local function screenShake(intensity, duration)
+function screenShake(intensity: number?, duration: number?)
 	intensity = intensity or 5
 	duration = duration or 0.3
 
 	if shaking then return end
 	shaking = true
 
-	local rng = Random.new()
 	local elapsed = 0
 	local connection
 	connection = RunService.RenderStepped:Connect(function(dt)
@@ -562,8 +780,8 @@ local function screenShake(intensity, duration)
 		local progress = 1 - (elapsed / duration)
 		local mag = intensity * progress
 		shakeOffset = CFrame.new(
-			rng:NextNumber(-mag, mag),
-			rng:NextNumber(-mag, mag),
+			RNG:NextNumber(-mag, mag),
+			RNG:NextNumber(-mag, mag),
 			0
 		)
 	end)
@@ -577,7 +795,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -----------------------------------------------------------------------
--- REMOTE EVENT CONNECTIONS (direct children of ReplicatedStorage)
+-- REMOTE EVENT CONNECTIONS
 -----------------------------------------------------------------------
 local lastKnownCoins = nil
 
@@ -604,9 +822,9 @@ if materialGiven then
 end
 
 if levelUpEvent then
-	levelUpEvent.OnClientEvent:Connect(function(newLevel)
+	levelUpEvent.OnClientEvent:Connect(function(newLevel, unlockInfo)
 		if newLevel and type(newLevel) == "number" then
-			showLevelUp(newLevel)
+			showLevelUp(newLevel, unlockInfo)
 		end
 	end)
 end
@@ -634,20 +852,19 @@ if playerDataLoaded then
 end
 
 -----------------------------------------------------------------------
--- EXPOSED API (via _G for cross-script access)
+-- EXPOSED API
 -----------------------------------------------------------------------
-local NotificationAPI = {
+_G.NotificationAPI = {
 	showCoinGain = showCoinGain,
 	showMaterialPickup = showMaterialPickup,
 	showLevelUp = showLevelUp,
 	showToast = showToast,
+	showDamageNumber = showDamageNumber,
 	screenFlash = screenFlash,
 	screenShake = screenShake,
 }
 
-_G.NotificationAPI = NotificationAPI
-
 -----------------------------------------------------------------------
 -- INIT
 -----------------------------------------------------------------------
-print("[NotificationClient] Notification system loaded")
+print("[NotificationClient] Cosmic Glass notification system loaded")

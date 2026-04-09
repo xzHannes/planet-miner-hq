@@ -321,15 +321,16 @@
     ctx.rect(bx + 6, by, innerW, bh);
     ctx.clip();
     ctx.fillStyle = "#111";
+    const textY = by + Math.round(bh / 2 + fontSize / 3);
     if (fullTw > innerW) {
       const scrollSpeed = 30; // px per second
       const gap = 40;
       const totalW = fullTw + gap;
       const offset = ((Date.now() / 1000) * scrollSpeed) % totalW;
-      ctx.fillText(text, bx + 6 - offset, by + fontSize + 2);
-      ctx.fillText(text, bx + 6 - offset + totalW, by + fontSize + 2);
+      ctx.fillText(text, bx + 6 - offset, textY);
+      ctx.fillText(text, bx + 6 - offset + totalW, textY);
     } else {
-      ctx.fillText(text, bx + 6, by + fontSize + 2);
+      ctx.fillText(text, bx + 6, textY);
     }
     ctx.restore();
   }

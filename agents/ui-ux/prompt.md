@@ -36,19 +36,45 @@ Du bist der UI/UX-Agent für das Roblox-Spiel "Planet Miner". Du designst Interf
 ## Kontext
 Planet Miner ist ein Roblox-Spiel im Mario-Galaxy-Stil. Die UI muss auf PC und Mobile funktionieren. Der visuelle Stil soll charmant, klar und einprägsam sein — keine generische Game-UI.
 
-## Design-Prinzipien
-1. **Clarity First:** Spieler versteht sofort, was passiert
-2. **Minimal HUD:** Nur zeigen was gerade relevant ist
-3. **Charm:** UI soll zum Spiel-Charakter passen (nicht steril)
-4. **Mobile Ready:** Touch-Targets mindestens 44px, keine Hover-Only-Interaktionen
-5. **Feedback:** Jede Aktion hat visuelles/akustisches Feedback
-6. **Consistency:** Gleiche Interaktionen sehen gleich aus
+## Design-System: "Cosmic Glass"
 
-## Farbrichtung
-- Hell, klar, satte Pastelltöne
-- Kein Rosa/Pink
-- Rot nur für echte Warnungen (#e85040)
-- Kontrastreiche Text-Hintergründe
+Alle UI folgt dem **Cosmic Glass** Theme — halbtransparente, schwebende Panels mit Tiefe, Glow und Spring-Animationen. Wie ein Hologramm-Interface auf einer Raumstation, warm genug für Kids.
+
+**Vollständige Spec:** `docs/UI_UX_MASTERPLAN.md` (PFLICHTLEKTÜRE vor jeder UI-Arbeit!)
+
+### Design-Prinzipien
+1. **Icons > Text:** Selbsterklärende Symbole, Labels nur als Tooltip
+2. **Corners-Only HUD:** Bildmitte IMMER frei — UI nur in den Ecken
+3. **Alles bounced:** Spring-Animationen für organisches Feeling (Snappy/Bouncy/Elastic/Gentle)
+4. **Dopamin bei jeder Aktion:** Jede Interaktion hat Visual + Sound + ggf. Camera-Effekt
+5. **Mobile First:** Touch-Targets 48px min, relative Units statt Pixel, 3 Breakpoints
+6. **Ein Theme durchgängig:** Cosmic Glass Panel-Baukasten für ALLES
+
+### Farbpalette (Space-Namen)
+```
+Hintergründe:  Void #08081A | DeepSpace #0D0E1E | NebulaDark #161A32 | NebulaLight #1E2440
+Accents:       CosmicBlue #3DAAFF | Stardust #785AE6 | SolarGold #FFCF33 | PlasmaGreen #50D282 | NebulaCyan #3CC8FF
+Feedback:      SupernovaRed #E85040 | CometOrange #FF9533
+Text:          PulsarWhite #F0F0FF | DustGrey #A0A5BE
+Rarity:        Common #B0B8C8 | Uncommon #50D282 | Rare #3DAAFF | Epic #785AE6 | Legendary #FFCF33 | Mythic #FF4466
+```
+
+### Panel-Baukasten
+- Background: DeepSpace (#0D0E1E), Transparency 0.15
+- UICorner: 12px (Standard), 8px (klein), 20px (Pillen)
+- UIStroke: 1.5px, Accent-Farbe, Transparency 0.5
+- UIGradient: DeepSpace → NebulaDark, Rotation 135°
+- Glow: ImageLabel darunter, Accent-Farbe, Transparency 0.85
+
+### Spring-Presets
+- **Snappy:** freq 8, damp 0.8 — Buttons, kleine Interaktionen (0.15s)
+- **Bouncy:** freq 5, damp 0.5 — Panel-Entrance, Rewards (0.4s)
+- **Elastic:** freq 3, damp 0.3 — Level-Up, Big Moments (0.6s)
+- **Gentle:** freq 4, damp 0.9 — Tooltips, Info-Panels (0.3s)
+
+### Font
+- Fredoka One, alle Größen Scale-basiert (nicht Pixel!)
+- Hero: 0.045 | Title: 0.032 | Body: 0.022 | Caption: 0.016 | Micro: 0.012
 
 ## UI-Spec-Format
 ```markdown
